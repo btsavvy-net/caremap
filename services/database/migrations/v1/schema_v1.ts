@@ -1,3 +1,5 @@
+import { NumericSubtype, QuestionType } from "@/constants/questionTypes";
+
 export interface User {
   id: string;
   email: string;
@@ -141,7 +143,9 @@ export interface DischargeInstruction {
 
 export interface TrackCategory {
   id: number;
+  code: string;
   name: string;
+  status: "active" | "inactive";
   created_date: Date;
   updated_date: Date;
 }
@@ -149,7 +153,10 @@ export interface TrackCategory {
 export interface TrackItem {
   id: number;
   category_id: number;
+  code: string;
   name: string;
+  frequency: "daily" | "weekly" | "monthly";
+  status: "active" | "inactive";
   created_date: Date;
   updated_date: Date;
 }
@@ -157,19 +164,34 @@ export interface TrackItem {
 export interface Question {
   id: number;
   item_id: number;
+  code: string;
   text: string;
-  type: "boolean" | "mcq" | "msq" | "numeric" | "text";
-  instructions?: string;
+  // type: "boolean" | "multi-choice" | "multi-select" | "numeric" | "text";
+  type: QuestionType;
   required: boolean;
-  summary_template?:string;
+  summary_template?: string;
+  status: "active" | "inactive";
   created_date: Date;
   updated_date: Date;
+
+  // optional metadata fields
+  instructions?: string;
+  // subtype?: "integer" | "decimal";
+  subtype?: NumericSubtype;
+  units?: string;
+  min?: number;
+  max?: number;
+  precision?: number;
+  parent_question_id?: number | null;
+  display_condition?: string | null;
 }
 
 export interface ResponseOption {
   id: number;
   question_id: number;
+  code: string;
   text: string;
+  status: "active" | "inactive";
   created_date: Date;
   updated_date: Date;
 }
@@ -191,6 +213,14 @@ export interface TrackItemEntry {
   patient_id: number;
   track_item_id: number;
   date: Date;
+  created_date: Date;
+  updated_date: Date;
+}
+
+export interface TrackConfigVersion {
+  module: string;
+  version: number;
+  last_synced_at: string | null;
 }
 
 export interface Contact {
@@ -226,5 +256,6 @@ export const tables = {
   RESPONSE_OPTION: "RESPONSE_OPTION",
   TRACK_RESPONSE: "TRACK_RESPONSE",
   TRACK_ITEM_ENTRY: "TRACK_ITEM_ENTRY",
+  TRACK_CONFIG_VERSION: "TRACK_CONFIG_VERSION",
   CONTACT: "CONTACT",
 };

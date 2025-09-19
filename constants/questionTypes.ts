@@ -1,0 +1,14 @@
+// Question type enum
+export enum QuestionType {
+  BOOLEAN = "boolean",
+  MCQ = "multi-choice",
+  MSQ = "multi-select",
+  NUMERIC = "numeric",
+  TEXT = "text",
+}
+
+// Numeric subtype enum (only applies if type = NUMERIC)
+export enum NumericSubtype {
+  INTEGER = "integer",
+  DECIMAL = "decimal",
+}

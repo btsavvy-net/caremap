@@ -8,6 +8,7 @@ import DescriptiveQuestion from "./DescriptiveQuestion";
 import MCQQuestion from "./MultipleChoice";
 import MSQQuestion from "./MultipleSelect";
 import NumericQuestion from "./NumericQuestion";
+import { QuestionType } from "@/constants/questionTypes";
 
 export default function QuestionRenderer({
   question,
@@ -23,7 +24,7 @@ export default function QuestionRenderer({
   setCustomOption: (ques_id: number, val: string) => void;
 }) {
   switch (question.type) {
-    case "mcq":
+    case QuestionType.MCQ:
       return (
         <MCQQuestion
           question={question}
@@ -32,7 +33,7 @@ export default function QuestionRenderer({
           onChange={setAnswer}
         />
       );
-    case "msq":
+    case QuestionType.MSQ:
       return (
         <MSQQuestion
           question={question}
@@ -42,7 +43,7 @@ export default function QuestionRenderer({
           handleAddOption={setCustomOption}
         />
       );
-    case "boolean":
+    case QuestionType.BOOLEAN:
       return (
         <BooleanQuestion
           question={question}
@@ -51,7 +52,7 @@ export default function QuestionRenderer({
           onChange={setAnswer}
         />
       );
-    case "numeric":
+    case QuestionType.NUMERIC:
       return (
         <NumericQuestion
           question={question}
@@ -60,7 +61,7 @@ export default function QuestionRenderer({
           onChange={setAnswer}
         />
       );
-    case "text":
+    case QuestionType.TEXT:
       return (
         <DescriptiveQuestion
           question={question}

@@ -5,6 +5,8 @@ export const DEBUG_ON = false; // Set to false in production
 
 export const RESET_ONBOARDING = false;
 
+export const LOG_TRUNCATE_LIMIT = 500;
+
 export const TOKEN_EXPIRY: number | null = null; // (in seconds) OR null to use expires_in from the OAuth call
 
 export const googleConfig: GoogleConfig = {

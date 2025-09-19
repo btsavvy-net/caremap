@@ -1,6 +1,6 @@
+import { useDB } from '@/services/database/db';
 import { logger } from '@/services/logging/logger';
 import { SQLiteBindParams, SQLiteDatabase } from 'expo-sqlite';
-import { useDB } from '@/services/database/db';
 
 export abstract class BaseModel<T> {
     protected db!: SQLiteDatabase;
@@ -25,7 +25,7 @@ export abstract class BaseModel<T> {
     // toDatabase: false -> convert ISO string to Date (while retrieving from the database)
     private convertDates(data: any, toDatabase: boolean): any {
         if (!data) return data;
-        
+
         if (data instanceof Date) {
             return toDatabase ? data.toISOString() : data;
         }
@@ -148,6 +148,44 @@ export abstract class BaseModel<T> {
         const values = [...setValues, ...whereValues];
 
         let result = await this.run(sql, values);
+        return result;
+    }
+
+    async upsertByFields(
+        data: Partial<T>,
+        conditions: Partial<T>
+    ): Promise<any> {
+        const dataKeys = Object.keys(data);
+        const dataValues = Object.values(data);
+
+        const whereKeys = Object.keys(conditions);
+        const whereValues = Object.values(conditions);
+
+        if (!dataKeys.length || !whereKeys.length) {
+            throw new Error("Upsert failed: missing fields or conditions.");
+        }
+
+        // First try update
+        const setClause = dataKeys.map(key => `${key} = ?`).join(", ");
+        const whereClause = whereKeys.map(key => `${key} = ?`).join(" AND ");
+        const updateSql = `UPDATE ${this.tableName} SET ${setClause} WHERE ${whereClause}`;
+        const updateValues = [...dataValues, ...whereValues];
+
+        const result = await this.run(updateSql, updateValues);
+
+        // If no rows affected → insert instead
+        if (result.changes === 0) {
+            const allKeys = [...dataKeys, ...whereKeys];
+            const allValues = [...dataValues, ...whereValues];
+            const placeholders = allKeys.map(() => "?").join(", ");
+
+            const insertSql = `INSERT INTO ${this.tableName} (${allKeys.join(
+                ", "
+            )}) VALUES (${placeholders})`;
+
+            return this.run(insertSql, allValues);
+        }
+
         return result;
     }
 

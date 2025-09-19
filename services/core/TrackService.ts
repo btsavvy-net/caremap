@@ -56,6 +56,7 @@ export const getTrackCategoriesWithItemsAndProgress = async (
             return rows as any[];
         });
 
+        // Build categories with items + summaries inline
         const result: TrackCategoryWithItems[] = [];
 
         for (const cat of cats) {
@@ -70,6 +71,9 @@ export const getTrackCategoriesWithItemsAndProgress = async (
                         name: row.name,
                         created_date: row.created_date,
                         updated_date: row.updated_date,
+                        code: row.code,
+                        frequency: row.frequency,
+                        status: row.status
                     },
                     entry_id: row.entry_id,
                     completed: row.completed,
@@ -166,13 +170,18 @@ export const getQuestionsWithOptions = async (
         }
 
         return questions.map((q: any) => ({
-            question: q,
+            question: {
+                ...q,
+                parent_question_id: q.parent_question_id ?? null,
+                display_condition: q.display_condition ?? null,
+            },
             options: allOptions.filter((opt: any) => opt.question_id === q.id),
             existingResponse: responseMap.get(q.id) ?? undefined
         }));
+
     });
 
-    logger.debug('getQuestionsWithOptions completed', { itemId }, `${JSON.stringify(result)}`);
+    logger.debug('getQuestionsWithOptions completed', { itemId, entryId }, `${JSON.stringify(result)}`);
     return result;
 };
 
@@ -351,4 +360,61 @@ export const getSummariesForItem = async (entryId: number): Promise<string[]> =>
             )
             .filter((s: any): s is string => !!s);
     });
+};
+
+
+// ------------------------------------------------------------------------------------------------------------
+// NOTE: Conditional logic previously used value-based checks, e.g., {"equals": "yes"}.
+// Now updated to use option codes instead, e.g., {"equals": "o_yes"} for MCQ/MSQ types.
+// These changes will be included in Service layer update in a follow-up PR.
+// ------------------------------------------------------------------------------------------------------------
+
+export const shouldDisplayQuestion = (
+    question: { parent_question_id?: number | null; display_condition?: string | null },
+    answers: Record<number, any>
+): boolean => {
+    // If no parent, always show
+    if (!question.parent_question_id) return true;
+
+    // If no condition, assume show
+    if (!question.display_condition) return true;
+
+    try {
+        const parentAnswer = answers[question.parent_question_id];
+        if (parentAnswer === undefined) return false; // parent unanswered → hide
+
+        const condition = JSON.parse(question.display_condition);
+
+        switch (condition.operator) {
+            case "equals":
+                return parentAnswer === condition.value;
+
+            case "not_equals":
+                return parentAnswer !== condition.value;
+
+            case "in":
+                return Array.isArray(condition.value) && condition.value.includes(parentAnswer);
+
+            case "not_in":
+                return Array.isArray(condition.value) && !condition.value.includes(parentAnswer);
+
+            case "gt":
+                return Number(parentAnswer) > Number(condition.value);
+
+            case "lt":
+                return Number(parentAnswer) < Number(condition.value);
+
+            case "gte":
+                return Number(parentAnswer) >= Number(condition.value);
+
+            case "lte":
+                return Number(parentAnswer) <= Number(condition.value);
+
+            default:
+                return true; // unknown operator → fallback show
+        }
+    } catch (err) {
+        console.warn("Invalid display_condition JSON:", question.display_condition, err);
+        return true;
+    }
 };

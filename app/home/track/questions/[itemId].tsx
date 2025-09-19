@@ -13,7 +13,6 @@ import {
   Question,
   ResponseOption,
 } from "@/services/database/migrations/v1/schema_v1";
-import { logger } from "@/services/logging/logger";
 import { ROUTES } from "@/utils/route";
 import palette from "@/utils/theme/color";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -50,7 +49,48 @@ export default function QuestionFlowScreen() {
     {}
   );
 
-  const isLast = currentIndex === questions.length - 1;
+  // Utility to check if a question is visible given current answers
+  const isQuestionVisible = (
+    q: Question,
+    answers: Record<number, any>
+  ): boolean => {
+    if (!q.parent_question_id || !q.display_condition) return true;
+
+    try {
+      const cond = JSON.parse(q.display_condition);
+      const parentAnswer = answers[q.parent_question_id];
+
+      if (cond.equals !== undefined) return parentAnswer === cond.equals;
+      if (cond.not_equals !== undefined)
+        return parentAnswer !== cond.not_equals;
+      if (cond.gt !== undefined) return Number(parentAnswer) > Number(cond.gt);
+      if (cond.gte !== undefined)
+        return Number(parentAnswer) >= Number(cond.gte);
+      if (cond.lt !== undefined) return Number(parentAnswer) < Number(cond.lt);
+      if (cond.lte !== undefined)
+        return Number(parentAnswer) <= Number(cond.lte);
+      if (cond.in !== undefined && Array.isArray(cond.in)) {
+        return cond.in.includes(parentAnswer);
+      }
+      if (cond.not_in !== undefined && Array.isArray(cond.not_in)) {
+        return !cond.not_in.includes(parentAnswer);
+      }
+      return true;
+    } catch {
+      return true;
+    }
+  };
+
+  // Compute visibleQuestions dynamically (no separate state needed)
+  const visibleQuestions = questions.filter((q) =>
+    isQuestionVisible(q, answers)
+  );
+
+  // isLast now checks against last visible question, not total questions
+  const isLast =
+    currentQuestion &&
+    visibleQuestions.length > 0 &&
+    visibleQuestions[visibleQuestions.length - 1].id === currentQuestion.id;
 
   useEffect(() => {
     if (!user) {
@@ -79,23 +119,29 @@ export default function QuestionFlowScreen() {
       questionWithOptions.forEach((qwo) => {
         const response = qwo.existingResponse;
         if (response && response.question_id != null) {
-          existingResponses[response.question_id] = response.answer;
-          logger.debug(
-            `Existing answer for question id ${response.question_id} is/are : ${response.answer}`
-          );
+          let answerValue: any = response.answer;
+          try {
+            answerValue = JSON.parse(answerValue);
+          } catch {
+            // leave as-is if not JSON
+          }
+          existingResponses[response.question_id] = answerValue;
         }
       });
 
       // --------------------------------------------------------------------------------------
-      // NOTE ::
-      // Frontend to utilize this existingResponses of type Record<number,any> to
-      // Either setAnswers(existingResponses);
-      // OR in other way of implementation further to populate UI with existing responses.
+      // NOTE:
+      // The frontend should use the `existingResponses` object of type Record<number, any>
+      // to populate the UI with previously submitted respon`ses. This can be done by either:
+      //   - Calling setAnswers(existingResponses), or
+      //   - Using an alternative implementation to render the data as needed.
       // --------------------------------------------------------------------------------------
 
       setQuestions(questionsArray);
       setResponseOptions(responseOptionsArray);
+      setAnswers(existingResponses);
     };
+
     loadQuestionsWithOptions();
   }, [itemIdNum]);
 

@@ -1,6 +1,6 @@
 import * as v1 from '@/services/database/migrations/v1/migration_v1';
-import * as seed_track_v1 from '@/services/database/seeds/v1/seed_track_v1';
 import * as seed_v1 from '@/services/database/seeds/v1/seed_v1';
+import { syncTrackConfig } from '@/services/database/seeds/v1/track_data_sync';
 import { logger } from "@/services/logging/logger";
 import { SQLITE_DB_NAME } from "@/utils/config";
 import { SQLiteDatabase } from "expo-sqlite";
@@ -49,11 +49,12 @@ export const runMigrations = async (db: SQLiteDatabase): Promise<void> => {
             if (currentVersion < 1) {
                 await v1.up(db);
                 await seed_v1.seedDatabase(db);
-                await seed_track_v1.seedTrackDatabase(db);
             }
             await db.execAsync(`PRAGMA user_version = ${DB_VERSION}`);
         });
     }
 
     await db.execAsync("PRAGMA foreign_keys = ON;");
+
+    await syncTrackConfig();
 };
