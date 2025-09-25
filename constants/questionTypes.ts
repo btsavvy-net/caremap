@@ -12,3 +12,16 @@ export enum NumericSubtype {
   INTEGER = "integer",
   DECIMAL = "decimal",
 }
+
+// Conditional Questioning - Conditions enum
+export enum QuestionCondition {
+  EQ = "equals",
+  NOT_EQ = "not_equals",
+  GT = "gt",
+  GTE = "gte",
+  LT = "lt",
+  LTE = "lte",
+  IN = "in",
+  NOT_IN = "not_in",
+  PARENT_RES_EXISTS = "parent_response_exists"
+}

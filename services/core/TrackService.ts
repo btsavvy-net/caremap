@@ -1,7 +1,8 @@
+import { QuestionCondition } from '@/constants/questionTypes';
 import { QuestionWithOptions, TrackCategoryWithItems, TrackCategoryWithSelectableItems, TrackItemWithProgress } from '@/services/common/types';
 import { getCurrentTimestamp } from '@/services/core/utils';
 import { useModel } from '@/services/database/BaseModel';
-import { tables } from '@/services/database/migrations/v1/schema_v1';
+import { Question, tables } from '@/services/database/migrations/v1/schema_v1';
 import { QuestionModel } from '@/services/database/models/QuestionModel';
 import { ResponseOptionModel } from '@/services/database/models/ResponseOptionModel';
 import { TrackCategoryModel } from '@/services/database/models/TrackCategoryModel';
@@ -362,59 +363,64 @@ export const getSummariesForItem = async (entryId: number): Promise<string[]> =>
     });
 };
 
-
-// ------------------------------------------------------------------------------------------------------------
-// NOTE: Conditional logic previously used value-based checks, e.g., {"equals": "yes"}.
-// Now updated to use option codes instead, e.g., {"equals": "o_yes"} for MCQ/MSQ types.
-// These changes will be included in Service layer update in a follow-up PR.
-// ------------------------------------------------------------------------------------------------------------
-
-export const shouldDisplayQuestion = (
-    question: { parent_question_id?: number | null; display_condition?: string | null },
+// Utility to check if a question is visible given current answers
+export const isQuestionVisible = (
+    q: Question,
     answers: Record<number, any>
 ): boolean => {
-    // If no parent, always show
-    if (!question.parent_question_id) return true;
-
-    // If no condition, assume show
-    if (!question.display_condition) return true;
+    if (!q.parent_question_id || !q.display_condition) return true;
 
     try {
-        const parentAnswer = answers[question.parent_question_id];
-        if (parentAnswer === undefined) return false; // parent unanswered → hide
+        const cond = JSON.parse(q.display_condition);
+        const parentAnswer = answers[q.parent_question_id];
 
-        const condition = JSON.parse(question.display_condition);
-
-        switch (condition.operator) {
-            case "equals":
-                return parentAnswer === condition.value;
-
-            case "not_equals":
-                return parentAnswer !== condition.value;
-
-            case "in":
-                return Array.isArray(condition.value) && condition.value.includes(parentAnswer);
-
-            case "not_in":
-                return Array.isArray(condition.value) && !condition.value.includes(parentAnswer);
-
-            case "gt":
-                return Number(parentAnswer) > Number(condition.value);
-
-            case "lt":
-                return Number(parentAnswer) < Number(condition.value);
-
-            case "gte":
-                return Number(parentAnswer) >= Number(condition.value);
-
-            case "lte":
-                return Number(parentAnswer) <= Number(condition.value);
-
-            default:
-                return true; // unknown operator → fallback show
+        // Handle parent_answered condition using enum
+        if (cond[QuestionCondition.PARENT_RES_EXISTS] === true) {
+            return (
+                parentAnswer !== undefined &&
+                parentAnswer !== null &&
+                parentAnswer !== ""
+            );
         }
+
+        const numericAnswer = Number(parentAnswer);
+
+        // Operator checks using enum
+        const operators: [QuestionCondition, (value: any) => boolean][] = [
+            [QuestionCondition.EQ, (v) => parentAnswer === v],
+            [QuestionCondition.NOT_EQ, (v) => parentAnswer !== v],
+            [QuestionCondition.GT, (v) => numericAnswer > Number(v)],
+            [QuestionCondition.GTE, (v) => numericAnswer >= Number(v)],
+            [QuestionCondition.LT, (v) => numericAnswer < Number(v)],
+            [QuestionCondition.LTE, (v) => numericAnswer <= Number(v)],
+            [
+                QuestionCondition.IN,
+                (v) => Array.isArray(v) && v.includes(parentAnswer),
+            ],
+            [
+                QuestionCondition.NOT_IN,
+                (v) => Array.isArray(v) && !v.includes(parentAnswer),
+            ],
+        ];
+
+        for (const [key, check] of operators) {
+            if (cond[key] !== undefined) {
+                return check(cond[key]);
+            }
+        }
+
+        // No known condition matched → default visible
+        return true;
     } catch (err) {
-        console.warn("Invalid display_condition JSON:", question.display_condition, err);
+        console.warn("Invalid display_condition JSON:", q.display_condition, err);
         return true;
     }
 };
+
+/** 
+ * ------------------------------------------------------------------------------------------------------------
+ * NOTE: Conditional logic previously used value-based checks, e.g., {"equals": "yes"}.
+ * Now should support to use option codes instead, e.g., {"equals": "o_yes"} for multi-choice/multi-select types.
+ * These changes will be included in Service layer update in a follow-up PR.
+ * ------------------------------------------------------------------------------------------------------------
+*/

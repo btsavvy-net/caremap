@@ -8,5 +8,12 @@ export enum Units {
   MMHG = "mmHg",
   MG_DL = "mg/dL",
   STEPS = "steps",
-  MIN = "minute"
+  MIN = "minute",
+  KG = "kg",
+  MM = "mm",
+  CM = "cm",
+  HOUR = "hour",
+  DAY = "day",
+  MONTH = "month",
+  YEAR = "year"
 }

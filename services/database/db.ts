@@ -1,6 +1,6 @@
 import * as v1 from '@/services/database/migrations/v1/migration_v1';
 import * as seed_v1 from '@/services/database/seeds/v1/seed_v1';
-import { syncTrackConfig } from '@/services/database/seeds/v1/track_data_sync';
+import { syncTrackConfig } from '@/services/database/track-sync/track_data_sync';
 import { logger } from "@/services/logging/logger";
 import { SQLITE_DB_NAME } from "@/utils/config";
 import { SQLiteDatabase } from "expo-sqlite";

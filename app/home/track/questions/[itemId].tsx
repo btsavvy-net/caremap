@@ -7,6 +7,7 @@ import { UserContext } from "@/context/UserContext";
 import {
   addOptionToQuestion,
   getQuestionsWithOptions,
+  isQuestionVisible,
   saveResponse,
 } from "@/services/core/TrackService";
 import {
@@ -48,38 +49,6 @@ export default function QuestionFlowScreen() {
   const [customOptions, setCustomOptions] = useState<Record<number, string>>(
     {}
   );
-
-  // Utility to check if a question is visible given current answers
-  const isQuestionVisible = (
-    q: Question,
-    answers: Record<number, any>
-  ): boolean => {
-    if (!q.parent_question_id || !q.display_condition) return true;
-
-    try {
-      const cond = JSON.parse(q.display_condition);
-      const parentAnswer = answers[q.parent_question_id];
-
-      if (cond.equals !== undefined) return parentAnswer === cond.equals;
-      if (cond.not_equals !== undefined)
-        return parentAnswer !== cond.not_equals;
-      if (cond.gt !== undefined) return Number(parentAnswer) > Number(cond.gt);
-      if (cond.gte !== undefined)
-        return Number(parentAnswer) >= Number(cond.gte);
-      if (cond.lt !== undefined) return Number(parentAnswer) < Number(cond.lt);
-      if (cond.lte !== undefined)
-        return Number(parentAnswer) <= Number(cond.lte);
-      if (cond.in !== undefined && Array.isArray(cond.in)) {
-        return cond.in.includes(parentAnswer);
-      }
-      if (cond.not_in !== undefined && Array.isArray(cond.not_in)) {
-        return !cond.not_in.includes(parentAnswer);
-      }
-      return true;
-    } catch {
-      return true;
-    }
-  };
 
   // Compute visibleQuestions dynamically (no separate state needed)
   const visibleQuestions = questions.filter((q) =>

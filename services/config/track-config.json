@@ -46,7 +46,9 @@
           "required": false,
           "summary_template": "Medication - {{answer}}",
           "parent_question_code": "q_emergency_med_times",
-          "display_condition": "{\"gt\": 0}",
+          "display_condition": {
+            "gt": 0
+          },
           "responseOptions": [
             {
               "code": "o_emer_med_name_inhaler",
@@ -77,7 +79,9 @@
           "required": false,
           "summary_template": "Medication was taken {{answer}} times.",
           "parent_question_code": "q_emergency_med_name",
-          "display_condition": "{\"equals\": \"o_emer_med_name_other\"}"
+          "display_condition": {
+            "equals": "o_emer_med_name_other"
+          }
         }
       ]
     },
@@ -109,11 +113,13 @@
         {
           "code": "q_exer_type",
           "text": "What type of exercises did you do?",
-          "type": "multi-choice",
-          "required": false,
+          "type": "multi-select",
+          "required": true,
           "summary_template": "Exercise type - {{answer}}",
           "parent_question_code": "q_exer_today",
-          "display_condition": "{\"equals\": \"o_exer_today_yes\"}",
+          "display_condition": {
+            "equals": "o_exer_today_yes"
+          },
           "responseOptions": [
             {
               "code": "o_cardio",
@@ -142,7 +148,9 @@
           "units": "minute",
           "summary_template": "Completed a {{answer}} minute workout.",
           "parent_question_code": "q_exer_type",
-          "display_condition": "{\"in\": [\"o_cardio\",\"o_strength\",\"o_yoga\",\"o_stretch\"]}"
+          "display_condition": {
+            "parent_response_exists": true
+          }
         }
       ]
     },
@@ -180,7 +188,9 @@
           "required": false,
           "summary_template": "{{answer}} leave/s taken in past month.",
           "parent_question_code": "q_sick_leave",
-          "display_condition": "{\"equals\":\"o_leave_yes\"}"
+          "display_condition": {
+            "equals": "o_leave_yes"
+          }
         },
         {
           "code": "q_leave_reason",
@@ -189,7 +199,9 @@
           "required": false,
           "summary_template": "Reason of leave/s: {{answer}}",
           "parent_question_code": "q_leave_times",
-          "display_condition": "{\"gt\":0}"
+          "display_condition": {
+            "gt": 0
+          }
         }
       ]
     },
@@ -248,7 +260,9 @@
           "required": true,
           "summary_template": "Food sensitivities/issues: {{answer}}.",
           "parent_question_code": "q_food_issue",
-          "display_condition": "{\"equals\":\"o_food_issue_yes\"}"
+          "display_condition": {
+            "equals": "o_food_issue_yes"
+          }
         }
       ]
     }
