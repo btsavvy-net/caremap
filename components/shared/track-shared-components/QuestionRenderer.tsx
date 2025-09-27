@@ -8,7 +8,7 @@ import DescriptiveQuestion from "./DescriptiveQuestion";
 import MCQQuestion from "./MultipleChoice";
 import MSQQuestion from "./MultipleSelect";
 import NumericQuestion from "./NumericQuestion";
-import { QuestionType } from "@/constants/questionTypes";
+import { QuestionType } from "@/constants/trackTypes";
 
 export default function QuestionRenderer({
   question,

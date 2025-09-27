@@ -1,4 +1,4 @@
-import { NumericSubtype, QuestionType } from "@/constants/questionTypes";
+import { NumericSubtype, QuestionType, TrackingFrequency } from "@/constants/trackTypes";
 
 export interface User {
   id: string;
@@ -155,7 +155,7 @@ export interface TrackItem {
   category_id: number;
   code: string;
   name: string;
-  frequency: "daily" | "weekly" | "monthly";
+  frequency: TrackingFrequency;
   status: "active" | "inactive";
   created_date: Date;
   updated_date: Date;
@@ -166,7 +166,6 @@ export interface Question {
   item_id: number;
   code: string;
   text: string;
-  // type: "boolean" | "multi-choice" | "multi-select" | "numeric" | "text";
   type: QuestionType;
   required: boolean;
   summary_template?: string;
@@ -176,7 +175,6 @@ export interface Question {
 
   // optional metadata fields
   instructions?: string;
-  // subtype?: "integer" | "decimal";
   subtype?: NumericSubtype;
   units?: string;
   min?: number;

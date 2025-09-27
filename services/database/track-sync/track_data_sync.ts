@@ -1,5 +1,5 @@
 import { isValidEnumValue } from "@/constants/enumValidator";
-import { NumericSubtype, QuestionType } from "@/constants/questionTypes";
+import { NumericSubtype, QuestionType, TrackingFrequency } from "@/constants/trackTypes";
 import { Units } from "@/constants/units";
 import predefinedConfig from "@/services/config/track-config.json";
 import { useModel } from "@/services/database/BaseModel";
@@ -199,6 +199,12 @@ async function upsertItem(item: any) {
     const categoryId = await resolveCategoryId(item.category_code);
     if (!categoryId) {
         console.warn(`Skipping Item ${item.code} → parent category not found`);
+        return;
+    }
+
+    // VALIDATION for frequency
+    if (item.frequency && !isValidEnumValue(TrackingFrequency, item.frequency)) {
+        console.error(`Sync skipped: Invalid frequency for Item "${item.code}": "${item.frequency}" !`);
         return;
     }
 

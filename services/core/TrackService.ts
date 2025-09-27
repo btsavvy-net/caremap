@@ -1,4 +1,4 @@
-import { QuestionCondition } from '@/constants/questionTypes';
+import { QuestionCondition } from '@/constants/trackTypes';
 import { QuestionWithOptions, TrackCategoryWithItems, TrackCategoryWithSelectableItems, TrackItemWithProgress } from '@/services/common/types';
 import { getCurrentTimestamp } from '@/services/core/utils';
 import { useModel } from '@/services/database/BaseModel';

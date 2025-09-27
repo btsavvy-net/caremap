@@ -1,3 +1,10 @@
+//Track Item enums
+export enum TrackingFrequency{
+  DAILY = "daily",
+  WEEKLY = "weekly",
+  MONTHLY = "monthly"
+}
+
 // Question type enum
 export enum QuestionType {
   BOOLEAN = "boolean",
