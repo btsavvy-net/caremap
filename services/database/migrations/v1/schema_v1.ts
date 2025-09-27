@@ -1,4 +1,5 @@
 import { NumericSubtype, QuestionType, TrackingFrequency } from "@/constants/trackTypes";
+import { Units } from "@/constants/units";
 
 export interface User {
   id: string;
@@ -176,7 +177,7 @@ export interface Question {
   // optional metadata fields
   instructions?: string;
   subtype?: NumericSubtype;
-  units?: string;
+  units?: Units;
   min?: number;
   max?: number;
   precision?: number;
