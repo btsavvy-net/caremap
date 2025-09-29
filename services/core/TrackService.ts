@@ -1,7 +1,8 @@
-import { QuestionWithOptions, TrackCategoryWithItems, TrackCategoryWithSelectableItems, TrackItemWithProgress, CustomGoalParams } from '@/services/common/types';
+import { CustomGoalParams, QuestionWithOptions, TrackCategoryWithItems, TrackCategoryWithSelectableItems, TrackItemWithProgress } from '@/services/common/types';
 import { getCurrentTimestamp } from '@/services/core/utils';
 import { useModel } from '@/services/database/BaseModel';
-import { Question, tables } from '@/services/database/migrations/v1/schema_v1';
+import { tables } from '@/services/database/migrations/v1/schema_v1';
+import { PatientModel } from '@/services/database/models/PatientModel';
 import { QuestionModel } from '@/services/database/models/QuestionModel';
 import { ResponseOptionModel } from '@/services/database/models/ResponseOptionModel';
 import { TrackCategoryModel } from '@/services/database/models/TrackCategoryModel';
@@ -9,7 +10,6 @@ import { TrackItemEntryModel } from '@/services/database/models/TrackItemEntryMo
 import { TrackItemModel } from '@/services/database/models/TrackItemModel';
 import { TrackResponseModel } from '@/services/database/models/TrackResponseModel';
 import { logger } from '@/services/logging/logger';
-import { PatientModel } from '@/services/database/models/PatientModel';
 
 // Single shared instance of models
 const trackCategoryModel = new TrackCategoryModel();
@@ -75,7 +75,6 @@ async function ensureSubscribedEntries(patientId: number, date: string): Promise
             WHERE tc.status = 'active'
               AND ti.status = 'active'
               AND tie.patient_id = ?
-              AND tie.status = 'active'
         `, [patientId]);
         return rows as { id: number; frequency: 'daily' | 'weekly' | 'monthly' }[];
     });
@@ -101,14 +100,17 @@ async function ensureSubscribedEntries(patientId: number, date: string): Promise
                     patient_id: patientId,
                     track_item_id: item.id,
                     date: normalizedDate,
-                    status: 'active' as any,
+                    // status: 'active' as any,
                     created_date: now,
                     updated_date: now,
                 });
             } else if ((existing as any).status !== 'active') {
                 // Reactivate if present but inactive
                 await model.updateByFields(
-                    { status: 'active' as any, updated_date: now },
+                    {
+                        // status: 'active' as any, 
+                        updated_date: now
+                    },
                     { id: (existing as any).id }
                 );
             }
@@ -392,7 +394,10 @@ export const addTrackItemOnDate = async (
         if (existing) {
             // Reactivate if previously inactive
             await model.updateByFields(
-                { status: 'active' as any, updated_date: now },
+                {
+                    // status: 'active' as any, 
+                    updated_date: now
+                },
                 { id: (existing as any).id }
             );
             logger.debug('linkItemToPatientDate: Item reactivated', { itemId, patientId, date: normalizedDate });
@@ -404,7 +409,7 @@ export const addTrackItemOnDate = async (
             patient_id: patientId,
             track_item_id: itemId,
             date: normalizedDate,
-            status: 'active' as any,
+            // status: 'active' as any,
             created_date: now,
             updated_date: now,
         });
@@ -425,7 +430,10 @@ export const removeTrackItemFromDate = async (
     // Deactivate all entries for this item/patient (both past and future) and preserve responses
     await useModel(trackItemEntryModel, async (model) => {
         await model.updateByFields(
-            { status: 'inactive' as any, updated_date: now },
+            {
+                // status: 'inactive' as any, 
+                updated_date: now
+            },
             { track_item_id: itemId, patient_id: patientId }
         );
     });
