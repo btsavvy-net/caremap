@@ -1,7 +1,8 @@
+import { QuestionCondition } from '@/constants/trackTypes';
 import { QuestionWithOptions, TrackCategoryWithItems, TrackCategoryWithSelectableItems, TrackItemWithProgress } from '@/services/common/types';
 import { getCurrentTimestamp } from '@/services/core/utils';
 import { useModel } from '@/services/database/BaseModel';
-import { tables } from '@/services/database/migrations/v1/schema_v1';
+import { Question, tables } from '@/services/database/migrations/v1/schema_v1';
 import { QuestionModel } from '@/services/database/models/QuestionModel';
 import { ResponseOptionModel } from '@/services/database/models/ResponseOptionModel';
 import { TrackCategoryModel } from '@/services/database/models/TrackCategoryModel';
@@ -56,6 +57,7 @@ export const getTrackCategoriesWithItemsAndProgress = async (
             return rows as any[];
         });
 
+        // Build categories with items + summaries inline
         const result: TrackCategoryWithItems[] = [];
 
         for (const cat of cats) {
@@ -70,6 +72,9 @@ export const getTrackCategoriesWithItemsAndProgress = async (
                         name: row.name,
                         created_date: row.created_date,
                         updated_date: row.updated_date,
+                        code: row.code,
+                        frequency: row.frequency,
+                        status: row.status
                     },
                     entry_id: row.entry_id,
                     completed: row.completed,
@@ -166,13 +171,18 @@ export const getQuestionsWithOptions = async (
         }
 
         return questions.map((q: any) => ({
-            question: q,
+            question: {
+                ...q,
+                parent_question_id: q.parent_question_id ?? null,
+                display_condition: q.display_condition ?? null,
+            },
             options: allOptions.filter((opt: any) => opt.question_id === q.id),
             existingResponse: responseMap.get(q.id) ?? undefined
         }));
+
     });
 
-    logger.debug('getQuestionsWithOptions completed', { itemId }, `${JSON.stringify(result)}`);
+    logger.debug('getQuestionsWithOptions completed', { itemId, entryId }, `${JSON.stringify(result)}`);
     return result;
 };
 
@@ -352,3 +362,65 @@ export const getSummariesForItem = async (entryId: number): Promise<string[]> =>
             .filter((s: any): s is string => !!s);
     });
 };
+
+// Utility to check if a question is visible given current answers
+export const isQuestionVisible = (
+    q: Question,
+    answers: Record<number, any>
+): boolean => {
+    if (!q.parent_question_id || !q.display_condition) return true;
+
+    try {
+        const cond = JSON.parse(q.display_condition);
+        const parentAnswer = answers[q.parent_question_id];
+
+        // Handle parent_answered condition using enum
+        if (cond[QuestionCondition.PARENT_RES_EXISTS] === true) {
+            return (
+                parentAnswer !== undefined &&
+                parentAnswer !== null &&
+                parentAnswer !== ""
+            );
+        }
+
+        const numericAnswer = Number(parentAnswer);
+
+        // Operator checks using enum
+        const operators: [QuestionCondition, (value: any) => boolean][] = [
+            [QuestionCondition.EQ, (v) => parentAnswer === v],
+            [QuestionCondition.NOT_EQ, (v) => parentAnswer !== v],
+            [QuestionCondition.GT, (v) => numericAnswer > Number(v)],
+            [QuestionCondition.GTE, (v) => numericAnswer >= Number(v)],
+            [QuestionCondition.LT, (v) => numericAnswer < Number(v)],
+            [QuestionCondition.LTE, (v) => numericAnswer <= Number(v)],
+            [
+                QuestionCondition.IN,
+                (v) => Array.isArray(v) && v.includes(parentAnswer),
+            ],
+            [
+                QuestionCondition.NOT_IN,
+                (v) => Array.isArray(v) && !v.includes(parentAnswer),
+            ],
+        ];
+
+        for (const [key, check] of operators) {
+            if (cond[key] !== undefined) {
+                return check(cond[key]);
+            }
+        }
+
+        // No known condition matched → default visible
+        return true;
+    } catch (err) {
+        console.warn("Invalid display_condition JSON:", q.display_condition, err);
+        return true;
+    }
+};
+
+/** 
+ * ------------------------------------------------------------------------------------------------------------
+ * NOTE: Conditional logic previously used value-based checks, e.g., {"equals": "yes"}.
+ * Now should support to use option codes instead, e.g., {"equals": "o_yes"} for multi-choice/multi-select types.
+ * These changes will be included in Service layer update in a follow-up PR.
+ * ------------------------------------------------------------------------------------------------------------
+*/

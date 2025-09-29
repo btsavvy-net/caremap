@@ -1,0 +1,270 @@
+{
+  "version": 1,
+  "predefinedTrackCategories": [
+    {
+      "code": "c_meds_treatment",
+      "name": "Meds and Treatment"
+    },
+    {
+      "code": "c_major_events",
+      "name": "Major Events"
+    },
+    {
+      "code": "c_fits_track",
+      "name": "Fitness Tracking"
+    },
+    {
+      "code": "c_nutrition",
+      "name": "Nutrition"
+    },
+    {
+      "code": "c_custom",
+      "name": "Custom"
+    }
+  ],
+  "predefinedTrackItems": [
+    {
+      "code": "i_emergency_medication",
+      "category_code": "c_meds_treatment",
+      "name": "Emergency Medication",
+      "frequency": "weekly",
+      "questions": [
+        {
+          "code": "q_emergency_med_times",
+          "text": "How many times did you need to take a rescue/as-needed medication in the past week?",
+          "type": "numeric",
+          "subtype": "integer",
+          "required": true,
+          "summary_template": "Medication was taken {{answer}} times.",
+          "parent_question_code": null,
+          "display_condition": null
+        },
+        {
+          "code": "q_emergency_med_name",
+          "text": "What is the name of the rescue/as-needed medication you took?",
+          "type": "multi-choice",
+          "required": false,
+          "summary_template": "Medication - {{answer}}",
+          "parent_question_code": "q_emergency_med_times",
+          "display_condition": {
+            "gt": 0
+          },
+          "responseOptions": [
+            {
+              "code": "o_emer_med_name_inhaler",
+              "text": "Breathing treatments/inhalers (e.g., Albuterol/Xopenex)"
+            },
+            {
+              "code": "o_emer_med_name_seizure",
+              "text": "Seizure medication (e.g., Diazepam/Diastat; Clonazepam/Klonopin)"
+            },
+            {
+              "code": "o_emer_med_name_pain",
+              "text": "Prescription pain medication"
+            },
+            {
+              "code": "o_emer_med_name_anxiety",
+              "text": "Prescription anxiety medication"
+            },
+            {
+              "code": "o_emer_med_name_other",
+              "text": "Other"
+            }
+          ]
+        },
+        {
+          "code": "q_emergency_med_other",
+          "text": "Name of the medication taken",
+          "type": "text",
+          "required": false,
+          "summary_template": "Medication was taken {{answer}} times.",
+          "parent_question_code": "q_emergency_med_name",
+          "display_condition": {
+            "equals": "o_emer_med_name_other"
+          }
+        }
+      ]
+    },
+    {
+      "code": "i_exer_rout",
+      "category_code": "c_fits_track",
+      "name": "Exercise Routine",
+      "frequency": "daily",
+      "questions": [
+        {
+          "code": "q_exer_today",
+          "text": "Did you exercise today?",
+          "type": "boolean",
+          "required": true,
+          "summary_template": "Exercise done: {{answer}}.",
+          "parent_question_code": null,
+          "display_condition": null,
+          "responseOptions": [
+            {
+              "code": "o_exer_today_yes",
+              "text": "Yes"
+            },
+            {
+              "code": "o_exer_today_no",
+              "text": "No"
+            }
+          ]
+        },
+        {
+          "code": "q_exer_type",
+          "text": "What type of exercises did you do?",
+          "type": "multi-select",
+          "required": true,
+          "summary_template": "Exercise type - {{answer}}",
+          "parent_question_code": "q_exer_today",
+          "display_condition": {
+            "equals": "o_exer_today_yes"
+          },
+          "responseOptions": [
+            {
+              "code": "o_cardio",
+              "text": "Cardio"
+            },
+            {
+              "code": "o_strength",
+              "text": "Strength"
+            },
+            {
+              "code": "o_yoga",
+              "text": "Yoga"
+            },
+            {
+              "code": "o_stretch",
+              "text": "Stretching"
+            }
+          ]
+        },
+        {
+          "code": "q_exer_min",
+          "text": "How many minutes did you workout?",
+          "type": "numeric",
+          "subtype": "integer",
+          "required": true,
+          "units": "minute",
+          "summary_template": "Completed a {{answer}} minute workout.",
+          "parent_question_code": "q_exer_type",
+          "display_condition": {
+            "parent_response_exists": true
+          }
+        }
+      ]
+    },
+    {
+      "code": "i_sick_visits",
+      "category_code": "c_major_events",
+      "name": "Sick Visits",
+      "frequency": "monthly",
+      "questions": [
+        {
+          "code": "q_sick_leave",
+          "text": "Have you had any acute/sick visits (emergency room, urgent care, same-day clinic or telehealth for a new/acute problem) in the past month?",
+          "type": "boolean",
+          "required": true,
+          "summary_template": "Leaves taken in past month - {{answer}}",
+          "parent_question_code": null,
+          "display_condition": null,
+          "responseOptions": [
+            {
+              "code": "o_leave_yes",
+              "text": "Yes"
+            },
+            {
+              "code": "o_leave_no",
+              "text": "No"
+            }
+          ]
+        },
+        {
+          "code": "q_leave_times",
+          "text": "Please indicate number of acute/sick visits taken in past month",
+          "type": "numeric",
+          "subtype": "integer",
+          "min": 1,
+          "required": false,
+          "summary_template": "{{answer}} leave/s taken in past month.",
+          "parent_question_code": "q_sick_leave",
+          "display_condition": {
+            "equals": "o_leave_yes"
+          }
+        },
+        {
+          "code": "q_leave_reason",
+          "text": "Please indicate reason/s of acute/sick visits in past month",
+          "type": "text",
+          "required": false,
+          "summary_template": "Reason of leave/s: {{answer}}",
+          "parent_question_code": "q_leave_times",
+          "display_condition": {
+            "gt": 0
+          }
+        }
+      ]
+    },
+    {
+      "code": "i_meal_quality",
+      "category_code": "c_nutrition",
+      "name": "Meal Quality",
+      "frequency": "daily",
+      "questions": [
+        {
+          "code": "q_meal_rating",
+          "text": "How would you rate your meals today?",
+          "type": "multi-choice",
+          "required": true,
+          "summary_template": "Rating for today's meals is {{answer}}.",
+          "parent_question_code": null,
+          "display_condition": null,
+          "responseOptions": [
+            {
+              "code": "o_meal_healthy",
+              "text": "Healthy"
+            },
+            {
+              "code": "o_meal_moderate",
+              "text": "Moderate"
+            },
+            {
+              "code": "o_meal_unhealthy",
+              "text": "Unhealthy"
+            }
+          ]
+        },
+        {
+          "code": "q_food_issue",
+          "text": "Any food sensitivities or issues?",
+          "type": "boolean",
+          "required": false,
+          "summary_template": "Has any food sensitivities or issues? :{{answer}}.",
+          "parent_question_code": null,
+          "display_condition": null,
+          "responseOptions": [
+            {
+              "code": "o_food_issue_yes",
+              "text": "Yes"
+            },
+            {
+              "code": "o_food_issue_no",
+              "text": "No"
+            }
+          ]
+        },
+        {
+          "code": "q_food_issue_info",
+          "text": "Please provide details about any food sensitivities or issues you may have.",
+          "type": "text",
+          "required": true,
+          "summary_template": "Food sensitivities/issues: {{answer}}.",
+          "parent_question_code": "q_food_issue",
+          "display_condition": {
+            "equals": "o_food_issue_yes"
+          }
+        }
+      ]
+    }
+  ]
+}

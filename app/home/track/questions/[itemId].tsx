@@ -7,13 +7,13 @@ import { UserContext } from "@/context/UserContext";
 import {
   addOptionToQuestion,
   getQuestionsWithOptions,
+  isQuestionVisible,
   saveResponse,
 } from "@/services/core/TrackService";
 import {
   Question,
   ResponseOption,
 } from "@/services/database/migrations/v1/schema_v1";
-import { logger } from "@/services/logging/logger";
 import { ROUTES } from "@/utils/route";
 import palette from "@/utils/theme/color";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -50,7 +50,16 @@ export default function QuestionFlowScreen() {
     {}
   );
 
-  const isLast = currentIndex === questions.length - 1;
+  // Compute visibleQuestions dynamically (no separate state needed)
+  const visibleQuestions = questions.filter((q) =>
+    isQuestionVisible(q, answers)
+  );
+
+  // isLast now checks against last visible question, not total questions
+  const isLast =
+    currentQuestion &&
+    visibleQuestions.length > 0 &&
+    visibleQuestions[visibleQuestions.length - 1].id === currentQuestion.id;
 
   useEffect(() => {
     if (!user) {
@@ -79,23 +88,29 @@ export default function QuestionFlowScreen() {
       questionWithOptions.forEach((qwo) => {
         const response = qwo.existingResponse;
         if (response && response.question_id != null) {
-          existingResponses[response.question_id] = response.answer;
-          logger.debug(
-            `Existing answer for question id ${response.question_id} is/are : ${response.answer}`
-          );
+          let answerValue: any = response.answer;
+          try {
+            answerValue = JSON.parse(answerValue);
+          } catch {
+            // leave as-is if not JSON
+          }
+          existingResponses[response.question_id] = answerValue;
         }
       });
 
       // --------------------------------------------------------------------------------------
-      // NOTE ::
-      // Frontend to utilize this existingResponses of type Record<number,any> to
-      // Either setAnswers(existingResponses);
-      // OR in other way of implementation further to populate UI with existing responses.
+      // NOTE:
+      // The frontend should use the `existingResponses` object of type Record<number, any>
+      // to populate the UI with previously submitted respon`ses. This can be done by either:
+      //   - Calling setAnswers(existingResponses), or
+      //   - Using an alternative implementation to render the data as needed.
       // --------------------------------------------------------------------------------------
 
       setQuestions(questionsArray);
       setResponseOptions(responseOptionsArray);
+      setAnswers(existingResponses);
     };
+
     loadQuestionsWithOptions();
   }, [itemIdNum]);
 
