@@ -16,7 +16,7 @@ import { Text, TextInput, TouchableOpacity, View } from "react-native";
 }) {
   return (
     <View className="mb-3">
-      <Text className="text-gray-500 text-sm mb-1">{label}</Text>
+      <Text className="text-black text-sm mb-1">{label}</Text>
        <TextInput
         className={`border rounded-lg p-3 ${
           editable

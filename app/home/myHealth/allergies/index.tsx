@@ -1,29 +1,37 @@
-import ActionPopover from "@/components/shared/ActionPopover";
-import { CustomAlertDialog } from "@/components/shared/CustomAlertDialog";
-import Header from "@/components/shared/Header";
-import { useCustomToast } from "@/components/shared/useCustomToast";
-import { Textarea, TextareaInput } from "@/components/ui/textarea";
-import { PatientContext } from "@/context/PatientContext";
-import {
-  createPatientAllergy,
-  deletePatientAllergy,
-  getPatientAllergiesByPatientId,
-  updatePatientAllergy,
-} from "@/services/core/PatientAllergyService";
-import { PatientAllergy } from "@/services/database/migrations/v1/schema_v1";
-import { logger } from "@/services/logging/logger";
-import palette from "@/utils/theme/color";
 import React, { useContext, useEffect, useState } from "react";
 import {
-  FlatList,
-  Keyboard,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
   View,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Textarea, TextareaInput } from "@/components/ui/textarea";
+import palette from "@/utils/theme/color";
+import {
+  createPatientAllergy,
+  getPatientAllergiesByPatientId,
+  updatePatientAllergy,
+  deletePatientAllergy,
+} from "@/services/core/PatientAllergyService";
+import { PatientContext } from "@/context/PatientContext";
+import { CustomAlertDialog } from "@/components/shared/CustomAlertDialog";
+import Header from "@/components/shared/Header";
+import ActionPopover from "@/components/shared/ActionPopover";
+import { useCustomToast } from "@/components/shared/useCustomToast";
+import { PatientAllergy } from "@/services/database/migrations/v1/schema_v1";
+import { logger } from "@/services/logging/logger";
+import { router } from "expo-router";
+import { Divider } from "@/components/ui/divider";
+import { CustomButton } from "@/components/shared/CustomButton";
+import IconLabelHeading from "@/components/shared/IconLabelHeading";
+import { Icon } from "@/components/ui/icon";
+import { Calendar } from "lucide-react-native";
+import { CustomFormInput } from "@/components/shared/CustomFormInput";
 
 export default function Allergies() {
   const { patient } = useContext(PatientContext);
@@ -38,7 +46,7 @@ export default function Allergies() {
   const [allergyToDelete, setAllergyToDelete] = useState<PatientAllergy | null>(
     null
   );
-
+  const linkedHealthSystem: string[] = [];
   // Custom toast
   const showToast = useCustomToast();
 
@@ -51,7 +59,7 @@ export default function Allergies() {
       const allergies = await getPatientAllergiesByPatientId(patient.id);
       setPatientAllergy(allergies);
     } catch (e) {
-      logger.debug(`${e}`);
+      logger.debug(String(e));
     }
   }
 
@@ -132,36 +140,40 @@ export default function Allergies() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView edges={["right", "top", "left"]} className="flex-1 bg-white">
       {/* Header */}
-      <Header title="Allergies" />
+      <Header
+        title="Allergies"
+        right={
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text className="text-white font-medium">Cancel</Text>
+          </TouchableOpacity>
+        }
+      />
 
-      <View className="px-6 pt-8 flex-1">
+      <View className="px-5 pt-5 flex-1">
         <View>
-          <Text
-            className="text-lg font-semibold"
-            style={{ color: palette.heading }}
-          >
-            Allergies (linked Health System)
-          </Text>
-          <Text className="text-gray-500">
-            Select ones to review with your care team
-          </Text>
-          {/* hr */}
-          <View className="h-px bg-gray-300 my-3" />
+          <IconLabelHeading
+            icon={require("@/assets/images/allergies.png")}
+            label="Allergies (Linked Health System)"
+            subtitle="Select ones to review with your care team"
+            count={linkedHealthSystem.length}
+          />
+
+          <Divider className="bg-gray-300 my-3" />
         </View>
 
-        <View>
-          <Text
-            className="text-lg font-semibold"
-            style={{ color: palette.heading }}
-          >
-            List your Allergies
-          </Text>
+        <View className="flex-1">
+          <IconLabelHeading
+            icon={require("@/assets/images/allergies.png")}
+            label="List your allergies"
+            subtitle="Manage your personal allergy records"
+            count={patientAllergy.length}
+          />
 
-          {/* hr */}
-          <View className="h-px bg-gray-300 my-3" />
-          <View>
+          {/* <Divider className="bg-gray-300 my-3" /> */}
+
+          <View className="flex-1">
             <FlatList
               data={patientAllergy}
               keyExtractor={(item) => item.id.toString()}
@@ -173,14 +185,21 @@ export default function Allergies() {
                   <View className="border border-gray-300 rounded-lg mb-3 px-3 py-3">
                     <View className="flex-row items-center justify-between">
                       <View className="flex-row items-center space-x-2">
-                        <Text className="text-lg ml-3 max-w-[220px] text-left">
+                        <Text className="text-lg ml-3 max-w-[220px] text-left font-semibold">
                           {item.topic}
                         </Text>
                       </View>
                       <View className="flex-row">
-                        <Text className="text-lg text-gray-500 mr-3">
-                          {formattedDate}
-                        </Text>
+                        <View className="flex-row items-center ">
+                          <Icon
+                            as={Calendar}
+                            size="sm"
+                            className="text-gray-600 mr-1"
+                          />
+                          <Text className="text-lg text-gray-700 mr-3">
+                            {formattedDate}
+                          </Text>
+                        </View>
 
                         <ActionPopover
                           onEdit={() => {
@@ -195,15 +214,16 @@ export default function Allergies() {
                     </View>
                     {item.details ? (
                       <View className="px-3 mt-1">
-                        <Text className="text-base text-gray-700">
+                        <Text className="text-lg text-gray-700">
                           {item.details}
                         </Text>
                       </View>
                     ) : null}
                     {item.severity ? (
-                      <View className="px-3 mt-1">
+                      <View className="px-3">
                         <Text className="text-base text-gray-700">
-                          Severity: {item.severity}
+                          Severity:
+                          <Text className="font-semibold">{item.severity}</Text>
                         </Text>
                       </View>
                     ) : null}
@@ -211,24 +231,30 @@ export default function Allergies() {
                 );
               }}
               ListEmptyComponent={
-                <Text className="text-gray-500">No Allergies found.</Text>
+                <Text className="text-gray-500">No allergies found.</Text>
               }
-              style={{ minHeight: 50, maxHeight: 300 }}
+              style={{ minHeight: 50 }}
             />
           </View>
         </View>
 
         {/* hr */}
-        <View className="h-px bg-gray-300 mb-2" />
+        <Divider className="bg-gray-300 " />
 
         {/* Add Button */}
-        <TouchableOpacity
+        {/* <TouchableOpacity
           className="rounded-md py-3 items-center mt-1"
           onPress={() => setShowAddForm(true)}
           style={{ backgroundColor: palette.primary }}
         >
           <Text className="text-white font-medium text-lg">Add Allergy</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
+        <View className="py-5">
+          <CustomButton
+            title="Add Allergy"
+            onPress={() => setShowAddForm(true)}
+          />
+        </View>
       </View>
 
       <CustomAlertDialog
@@ -268,47 +294,66 @@ function AddAllergyPage({
     editingCondition?.severity || ""
   );
 
+  const isDisabled = topic.trim().length === 0;
+
   const handleSave = () => {
-    if (topic.trim()) {
-      handleAddUpdateAllergy({
-        ...(editingCondition?.id ? { id: editingCondition.id } : {}),
-        topic: topic.trim(),
-        details: details.trim(),
-        ...(severity ? { severity } : {}),
-      } as PatientAllergy);
-    }
+    if (isDisabled) return;
+    handleAddUpdateAllergy({
+      ...(editingCondition?.id ? { id: editingCondition.id } : {}),
+      topic: topic.trim(),
+      details: details.trim(),
+      ...(severity ? { severity } : {}),
+    } as PatientAllergy);
+    onClose(); // Go back to list
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <SafeAreaView className="flex-1 bg-white">
-        {/* Header */}
-        <Header title="Allergies" onBackPress={onClose} />
-
-        <View className="px-6 py-8">
-          <Text
-            className="text-lg font-medium mb-3"
+    <SafeAreaView edges={["right", "top", "left"]} className="flex-1 bg-white">
+      {/* Header */}
+      <Header
+        title="Allergies"
+        right={
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text className="text-white font-medium">Cancel</Text>
+          </TouchableOpacity>
+        }
+        onBackPress={onClose}
+      />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        className="bg-white"
+        behavior={"padding"}
+        // behavior={Platform.OS === "ios" ? "padding" : "height"}
+        // keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+      >
+        <ScrollView
+          className="px-5 pt-5 flex-1"
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* <Text
+            className="text-xl font-medium mb-3"
             style={{ color: palette.heading }}
           >
-            {editingCondition ? "Update Allergy" : " Add Allergy"}
-          </Text>
+            {editingCondition ? "Update Allergy" : " Update Allergy"}
+          </Text> */}
+          <IconLabelHeading
+            icon={require("@/assets/images/allergies.png")}
+            label={editingCondition ? "Update Allergy" : "Add Allergy"}
+            // subtitle="Please provide the details below"
+          />
 
           {/* Enter Topic */}
-          <View className="mb-4">
-            <Text className="text-gray-600 text-sm mb-2">Enter Topic</Text>
-            <TextInput
-              value={topic}
-              onChangeText={setTopic}
-              placeholder="Please Enter your topic here"
-              className="border border-gray-300 rounded-md px-3 py-3 text-base"
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
-            />
-          </View>
+          <CustomFormInput
+            className="mb-2"
+            label="Enter Topic *"
+            value={topic}
+            onChangeText={setTopic}
+            placeholder="e.g., Diabetes, Hypertension"
+          />
 
           {/* Details */}
-          <Text className="text-gray-500 mb-2 text-sm">Details</Text>
+          <Text className="text-black mb-2 text-base">Details</Text>
           <Textarea
             size="md"
             isReadOnly={false}
@@ -325,8 +370,8 @@ function AddAllergyPage({
           </Textarea>
 
           {/* Severity */}
-          <Text className="text-gray-600 text-sm mb-2 mt-4">Severity</Text>
-          <View style={{ width: "70%", alignSelf: "flex-start" }}>
+          <Text className="text-black text-base mb-2 mt-4">Severity *</Text>
+          <View style={{ width: "100%", alignSelf: "flex-start" }}>
             <View
               className="flex-row border rounded-lg overflow-hidden mb-2"
               style={{ borderColor: palette.primary }}
@@ -360,22 +405,17 @@ function AddAllergyPage({
               ))}
             </View>
           </View>
+        </ScrollView>
 
-          {/* Save button */}
-          <TouchableOpacity
-            className="py-3 rounded-md mt-3"
-            style={{ backgroundColor: palette.primary }}
-            onPress={() => {
-              handleSave();
-              onClose(); // Go back to list
-            }}
-          >
-            <Text className="text-white font-bold text-center">
-              {editingCondition ? "Update" : "Save"}
-            </Text>
-          </TouchableOpacity>
+        {/* Save button */}
+        <View className="p-5">
+          <CustomButton
+            title={editingCondition ? "Update" : "Save"}
+            onPress={handleSave}
+            disabled={isDisabled}
+          />
         </View>
-      </SafeAreaView>
-    </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
