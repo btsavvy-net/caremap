@@ -212,6 +212,7 @@ export interface TrackItemEntry {
   patient_id: number;
   track_item_id: number;
   date: Date;
+  selected: 0 | 1;
   created_date: Date;
   updated_date: Date;
 }
