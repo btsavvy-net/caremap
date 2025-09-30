@@ -1,5 +1,5 @@
-import { QuestionCondition, TrackingFrequency } from '@/constants/trackTypes';
-import { QuestionWithOptions, TrackCategoryWithItems, TrackCategoryWithSelectableItems, TrackItemWithProgress } from '@/services/common/types';
+import { QuestionCondition, QuestionType, TrackingFrequency } from '@/constants/trackTypes';
+import { CustomGoalParams, QuestionWithOptions, TrackCategoryWithItems, TrackCategoryWithSelectableItems, TrackItemWithProgress } from '@/services/common/types';
 import { getCurrentTimestamp } from '@/services/core/utils';
 import { useModel } from '@/services/database/BaseModel';
 import { Question, tables } from '@/services/database/migrations/v1/schema_v1';
