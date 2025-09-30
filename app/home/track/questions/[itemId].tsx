@@ -30,8 +30,10 @@ export default function QuestionFlowScreen() {
   const { patient } = useContext(PatientContext);
   const { setRefreshData } = useContext(TrackContext);
 
+  // sampleQuestions
   const [questions, setQuestions] = useState<Question[]>([]);
 
+  // sampleResponse
   const [responseOptions, setResponseOptions] = useState<ResponseOption[]>([]);
 
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
@@ -93,7 +95,7 @@ export default function QuestionFlowScreen() {
 
     setQuestions(questionsArray);
     setResponseOptions(responseOptionsArray);
-    setAnswers(existingResponses); 
+    setAnswers(existingResponses); // <-- now all question types will highlight properly
   };
 
   loadQuestionsWithOptions();
@@ -186,6 +188,7 @@ export default function QuestionFlowScreen() {
     if (isLast) {
       // mark fully completed (ensure completed === total)
       await submitAnswers(answers);
+      // setRefreshData(true);
       router.back();
       setRefreshData(true);
     } else {
