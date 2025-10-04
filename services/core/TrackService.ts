@@ -1,8 +1,8 @@
 import { QuestionCondition, QuestionType, TrackingFrequency } from '@/constants/trackTypes';
-import { CustomGoalParams, QuestionWithOptions, TrackCategoryWithItems, TrackCategoryWithSelectableItems, TrackItemWithProgress } from '@/services/common/types';
+import { QuestionWithOptions, TrackCategoryWithItems, TrackCategoryWithSelectableItems, TrackItemWithProgress } from '@/services/common/types';
 import { getCurrentTimestamp } from '@/services/core/utils';
 import { useModel } from '@/services/database/BaseModel';
-import { Question, tables } from '@/services/database/migrations/v1/schema_v1';
+import { Question, ResponseOption, tables } from '@/services/database/migrations/v1/schema_v1';
 import { PatientModel } from '@/services/database/models/PatientModel';
 import { QuestionModel } from '@/services/database/models/QuestionModel';
 import { ResponseOptionModel } from '@/services/database/models/ResponseOptionModel';
@@ -515,15 +515,17 @@ export const getSummariesForItem = async (entryId: number): Promise<string[]> =>
 // Utility to check if a question is visible given current answers
 export const isQuestionVisible = (
     q: Question,
-    answers: Record<number, any>
+    answers: Record<number, any>,
+    allQuestions?: Question[],
+    allOptions?: ResponseOption[]
 ): boolean => {
     if (!q.parent_question_id || !q.display_condition) return true;
 
     try {
         const cond = JSON.parse(q.display_condition);
         const parentAnswer = answers[q.parent_question_id];
-        let parsedParentAnswer;
-        
+        let parsedParentAnswer: any;
+
         try {
             parsedParentAnswer = JSON.parse(parentAnswer);
         } catch {
@@ -533,10 +535,43 @@ export const isQuestionVisible = (
         // Handle parent_answered condition using enum
         if (cond[QuestionCondition.PARENT_RES_EXISTS] === true) {
             return (
+
                 parsedParentAnswer !== undefined &&
                 parsedParentAnswer !== null &&
-                parsedParentAnswer !== ""
+                parsedParentAnswer !== "" &&
+                (!Array.isArray(parsedParentAnswer) || parsedParentAnswer.length > 0)
             );
+        }
+
+        // Find parent question to determine its type
+        const parentQuestion = allQuestions?.find(question => question.id === q.parent_question_id);
+        const parentQuestionType = parentQuestion?.type;
+
+        // Map text values to option codes for boolean, multi-choice, and multi-select questions
+        if (parentQuestionType &&
+            (parentQuestionType === QuestionType.BOOLEAN ||
+                parentQuestionType === QuestionType.MCQ ||
+                parentQuestionType === QuestionType.MSQ) &&
+            allOptions?.length) {
+
+            // Get options for the parent question
+            const parentOptions = allOptions.filter(opt => opt.question_id === q.parent_question_id);
+
+            // Map text values to option codes
+            if (Array.isArray(parsedParentAnswer)) {
+                // Handle multi-select case
+                const mappedAnswers = parsedParentAnswer.map(answer => {
+                    const matchingOption = parentOptions.find(opt => opt.text === answer);
+                    return matchingOption ? matchingOption.code : answer;
+                });
+                parsedParentAnswer = mappedAnswers;
+            } else if (typeof parsedParentAnswer === 'string') {
+                // Handle boolean and multi-choice case
+                const matchingOption = parentOptions.find(opt => opt.text === parsedParentAnswer);
+                if (matchingOption) {
+                    parsedParentAnswer = matchingOption.code;
+                }
+            }
         }
 
         const numericAnswer = Number(parsedParentAnswer);
@@ -551,14 +586,14 @@ export const isQuestionVisible = (
             [QuestionCondition.LTE, (v) => !isNaN(numericAnswer) && numericAnswer <= Number(v)],
             [
                 QuestionCondition.IN,
-                (v) => Array.isArray(v) && (Array.isArray(parsedParentAnswer) ? 
-                    v.some(val => parsedParentAnswer.includes(val)) : 
+                (v) => Array.isArray(v) && (Array.isArray(parsedParentAnswer) ?
+                    v.some(val => parsedParentAnswer.includes(val)) :
                     v.includes(parsedParentAnswer)),
             ],
             [
                 QuestionCondition.NOT_IN,
-                (v) => Array.isArray(v) && (Array.isArray(parsedParentAnswer) ? 
-                    !v.some(val => parsedParentAnswer.includes(val)) : 
+                (v) => Array.isArray(v) && (Array.isArray(parsedParentAnswer) ?
+                    !v.some(val => parsedParentAnswer.includes(val)) :
                     !v.includes(parsedParentAnswer)),
             ],
         ];
