@@ -11,6 +11,12 @@ import { TrackItemEntryModel } from '@/services/database/models/TrackItemEntryMo
 import { TrackItemModel } from '@/services/database/models/TrackItemModel';
 import { TrackResponseModel } from '@/services/database/models/TrackResponseModel';
 import { logger } from '@/services/logging/logger';
+import { v4 as uuidv4 } from 'uuid';
+
+// Helper function to generate unique codes
+const generateUniqueCode = (): string => {
+    return uuidv4();
+};
 
 // Single shared instance of models
 const trackCategoryModel = new TrackCategoryModel();
@@ -612,10 +618,8 @@ export const isQuestionVisible = (
     }
 };
 
-/**
- * ------------------------------------------------------------------------------------------------------------
- * Custom Goals methods
- * ------------------------------------------------------------------------------------------------------------
+/*
+ Custom Goals methods :
 */
 
 export const addCustomGoal = async (params: CustomGoalParams): Promise<number> => {
@@ -632,7 +636,7 @@ export const addCustomGoal = async (params: CustomGoalParams): Promise<number> =
     });
 
     // Generate a unique code for this track item
-    const trackItemCode = `CUSTOM_${Date.now()}`;
+    const trackItemCode = generateUniqueCode();
 
     // Create a new track item for the custom goal
     const trackItemId = await useModel(trackItemModel, async (model) => {
@@ -653,7 +657,7 @@ export const addCustomGoal = async (params: CustomGoalParams): Promise<number> =
         const question = questions[i];
 
         // Generate a unique code for each question
-        const questionCode = `CUSTOM_Q_${Date.now()}_${i}`;
+        const questionCode = generateUniqueCode();
 
         const questionId = await useModel(questionModel, async (model) => {
             const result = await model.insert({
@@ -674,7 +678,7 @@ export const addCustomGoal = async (params: CustomGoalParams): Promise<number> =
             await useModel(responseOptionModel, async (model) => {
                 await model.insert({
                     question_id: questionId,
-                    code: `OPTION_${Date.now()}_YES`,
+                    code: generateUniqueCode(),
                     text: 'Yes',
                     status: 'active' as any,
                     created_date: now,
@@ -682,7 +686,7 @@ export const addCustomGoal = async (params: CustomGoalParams): Promise<number> =
                 });
                 await model.insert({
                     question_id: questionId,
-                    code: `OPTION_${Date.now()}_NO`,
+                    code: generateUniqueCode(),
                     text: 'No',
                     status: 'active' as any,
                     created_date: now,
@@ -700,7 +704,7 @@ export const addCustomGoal = async (params: CustomGoalParams): Promise<number> =
                         const opt = cleanOptions[j];
                         await model.insert({
                             question_id: questionId,
-                            code: `OPTION_${Date.now()}_${j}`,
+                            code: generateUniqueCode(),
                             text: opt.trim(),
                             status: 'active' as any,
                             created_date: now,
@@ -764,7 +768,7 @@ export const editCustomGoal = async (
                         const opts = q.options ?? [];
                         for (const opt of opts) {
                             await model.insert({
-                                code: `RESP_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                                code: generateUniqueCode(),
                                 question_id: q.id,
                                 text: opt.trim(),
                                 status: 'active' as any,
