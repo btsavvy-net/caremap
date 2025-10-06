@@ -52,7 +52,7 @@ export default function QuestionFlowScreen() {
 
   // Compute visibleQuestions dynamically (no separate state needed)
   const visibleQuestions = questions.filter((q) =>
-    isQuestionVisible(q, answers)
+    isQuestionVisible(q, answers, questions, responseOptions)
   );
 
   // isLast now checks against last visible question, not total questions
