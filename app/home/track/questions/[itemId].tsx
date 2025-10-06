@@ -58,8 +58,8 @@ export default function QuestionFlowScreen() {
   // isLast now checks against last visible question, not total questions
   const isLast =
     currentQuestion &&
-    visibleQuestions.length > 0 &&
-    visibleQuestions[visibleQuestions.length - 1].id === currentQuestion.id;
+    visibleQuestions?.length > 0 &&
+    visibleQuestions[visibleQuestions.length - 1]?.id === currentQuestion.id;
 
   useEffect(() => {
     if (!user) {
