@@ -159,7 +159,9 @@ export const up = async (db: SQLiteDatabase) => {
 
      CREATE TABLE IF NOT EXISTS ${tables.TRACK_CATEGORY} (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      code TEXT UNIQUE NOT NULL,
       name TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'active',
       created_date TEXT NOT NULL DEFAULT (datetime('now')),
       updated_date TEXT NOT NULL DEFAULT (datetime('now'))
     );
@@ -167,7 +169,10 @@ export const up = async (db: SQLiteDatabase) => {
     CREATE TABLE IF NOT EXISTS ${tables.TRACK_ITEM} (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       category_id INTEGER NOT NULL,
+      code TEXT UNIQUE NOT NULL,
       name TEXT NOT NULL,
+      frequency TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'active',
       created_date TEXT NOT NULL DEFAULT (datetime('now')),
       updated_date TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY(category_id) REFERENCES ${tables.TRACK_CATEGORY}(id) ON DELETE CASCADE
@@ -176,11 +181,20 @@ export const up = async (db: SQLiteDatabase) => {
     CREATE TABLE IF NOT EXISTS ${tables.QUESTION} (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       item_id INTEGER NOT NULL,
+      code TEXT UNIQUE NOT NULL,
       text TEXT NOT NULL,
-      type TEXT CHECK(type IN ('boolean', 'mcq', 'msq', 'numeric', 'text')) NOT NULL,
+      type TEXT CHECK(type IN ('boolean', 'multi-choice', 'multi-select', 'numeric', 'text')) NOT NULL,
+      subtype TEXT,
+      units TEXT,
+      min REAL,
+      max REAL,
+      precision INTEGER,
       instructions TEXT DEFAULT NULL,
+      parent_question_id INTEGER,
+      display_condition TEXT,                                       -- JSON String
       required INTEGER NOT NULL DEFAULT 0,
       summary_template TEXT,
+      status TEXT NOT NULL DEFAULT 'active',
       created_date TEXT NOT NULL DEFAULT (datetime('now')),
       updated_date TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY(item_id) REFERENCES ${tables.TRACK_ITEM}(id) ON DELETE CASCADE
@@ -189,7 +203,9 @@ export const up = async (db: SQLiteDatabase) => {
     CREATE TABLE IF NOT EXISTS ${tables.RESPONSE_OPTION} (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       question_id INTEGER NOT NULL,
+      code TEXT UNIQUE NOT NULL,
       text TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'active',
       created_date TEXT NOT NULL DEFAULT (datetime('now')),
       updated_date TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY(question_id) REFERENCES ${tables.QUESTION}(id) ON DELETE CASCADE
@@ -201,6 +217,7 @@ export const up = async (db: SQLiteDatabase) => {
       patient_id INTEGER NOT NULL,
       track_item_id INTEGER NOT NULL,
       date TEXT NOT NULL,
+      selected INTEGER NOT NULL DEFAULT 1,
       created_date TEXT NOT NULL DEFAULT (datetime('now')),
       updated_date TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY(user_id) REFERENCES ${tables.USER}(id) ON DELETE CASCADE,
@@ -221,6 +238,12 @@ export const up = async (db: SQLiteDatabase) => {
       FOREIGN KEY(patient_id) REFERENCES ${tables.PATIENT}(id) ON DELETE CASCADE,
       FOREIGN KEY(question_id) REFERENCES ${tables.QUESTION}(id) ON DELETE CASCADE,
       FOREIGN KEY(track_item_entry_id) REFERENCES ${tables.TRACK_ITEM_ENTRY}(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS ${tables.TRACK_CONFIG_VERSION} (
+      module TEXT PRIMARY KEY,     -- e.g., 'track'
+      version INTEGER NOT NULL DEFAULT 0,    -- version number from config
+      last_synced_at TEXT          -- ISO timestamp when last sync happened
     );
 
     CREATE TABLE IF NOT EXISTS ${tables.CONTACT} (
