@@ -114,7 +114,7 @@
           "code": "q_exer_type",
           "text": "What type of exercises did you do?",
           "type": "multi-select",
-          "required": true,
+          "required": false,
           "summary_template": "Exercise type - {{answer}}",
           "parent_question_code": "q_exer_today",
           "display_condition": {
@@ -144,7 +144,7 @@
           "text": "How many minutes did you workout?",
           "type": "numeric",
           "subtype": "integer",
-          "required": true,
+          "required": false,
           "units": "minute",
           "summary_template": "Completed a {{answer}} minute workout.",
           "parent_question_code": "q_exer_type",
@@ -257,7 +257,7 @@
           "code": "q_food_issue_info",
           "text": "Please provide details about any food sensitivities or issues you may have.",
           "type": "text",
-          "required": true,
+          "required": false,
           "summary_template": "Food sensitivities/issues: {{answer}}.",
           "parent_question_code": "q_food_issue",
           "display_condition": {
