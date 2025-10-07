@@ -1,8 +1,11 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, Text, TextInput } from "react-native";
 
 import palette from "@/utils/theme/color";
-import { Question, ResponseOption as _ResponseOption } from "@/services/database/migrations/v1/schema_v1";
+import {
+  Question,
+  ResponseOption as _ResponseOption,
+} from "@/services/database/migrations/v1/schema_v1";
 
 export default function DescriptiveQuestion({
   question,
@@ -15,6 +18,13 @@ export default function DescriptiveQuestion({
   onChange: (val: string) => void;
   responses: _ResponseOption[];
 }) {
+  // Pre-fill with existing response (if available)
+  useEffect(() => {
+    if (!value && responses?.length > 0) {
+      onChange(responses[0].text); // take the first saved text response
+    }
+  }, [responses]);
+
   return (
     <View className="mb-4">
       <Text
