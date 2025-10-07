@@ -7,13 +7,13 @@ import { UserContext } from "@/context/UserContext";
 import {
   addOptionToQuestion,
   getQuestionsWithOptions,
-  isQuestionVisible,
   saveResponse,
 } from "@/services/core/TrackService";
 import {
   Question,
   ResponseOption,
 } from "@/services/database/migrations/v1/schema_v1";
+import { logger } from "@/services/logging/logger";
 import { ROUTES } from "@/utils/route";
 import palette from "@/utils/theme/color";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -52,26 +52,17 @@ export default function QuestionFlowScreen() {
     {}
   );
 
-  // Compute visibleQuestions dynamically (no separate state needed)
-  const visibleQuestions = questions.filter((q) =>
-    isQuestionVisible(q, answers, questions, responseOptions)
-  );
-
-  // isLast now checks against last visible question, not total questions
-  const isLast =
-    currentQuestion &&
-    visibleQuestions?.length > 0 &&
-    visibleQuestions[visibleQuestions.length - 1]?.id === currentQuestion.id;
+  const isLast = currentIndex === questions.length - 1;
 
   useEffect(() => {
-  if (!user) {
-    router.replace(ROUTES.LOGIN);
-    return;
-  }
-  if (!patient) {
-    router.replace(ROUTES.MY_HEALTH);
-    return;
-  }
+    if (!user) {
+      router.replace(ROUTES.LOGIN);
+      return;
+    }
+    if (!patient) {
+      router.replace(ROUTES.MY_HEALTH);
+      return;
+    }
 
     const loadQuestionsWithOptions = async () => {
       if (!itemIdNum) return;
@@ -80,34 +71,37 @@ export default function QuestionFlowScreen() {
         entryIdNum
       );
 
-    const questionsArray = questionWithOptions.map((qwo) => qwo.question);
-    const responseOptionsArray = questionWithOptions.flatMap((qwo) => qwo.options);
+      const questionsArray = questionWithOptions.map((qwo) => qwo.question);
+      const responseOptionsArray = questionWithOptions.flatMap(
+        (qwo) => qwo.options
+      );
 
-    const existingResponses: Record<number, any> = {};
+      const existingResponses: Record<number, any> = {};
 
       questionWithOptions.forEach((qwo) => {
         const response = qwo.existingResponse;
         if (response && response.question_id != null) {
           let answerValue: any = response.answer;
+
+          // Parse JSON to clean quotes and arrays
           try {
             answerValue = JSON.parse(answerValue);
-          } catch {
-            // leave as-is if not JSON
+          } catch (e) {
+            // If not JSON, keep as-is (e.g., numeric answers)
           }
+
           existingResponses[response.question_id] = answerValue;
+
+          logger.debug(
+            `Existing answer for question id ${response.question_id} is/are :`,
+            answerValue
+          );
         }
-      })
-      // --------------------------------------------------------------------------------------
-      // NOTE:
-      // The frontend should use the `existingResponses` object of type Record<number, any>
-      // to populate the UI with previously submitted respon`ses. This can be done by either:
-      //   - Calling setAnswers(existingResponses), or
-      //   - Using an alternative implementation to render the data as needed.
-      // --------------------------------------------------------------------------------------
+      });
 
       setQuestions(questionsArray);
       setResponseOptions(responseOptionsArray);
-      setAnswers(existingResponses);
+      setAnswers(existingResponses); // <-- now all question types will highlight properly
     };
 
     loadQuestionsWithOptions();
