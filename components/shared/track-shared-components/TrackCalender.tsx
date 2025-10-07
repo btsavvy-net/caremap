@@ -40,7 +40,7 @@ const TrackCalendar: React.FC<CalendarProps> = ({
       onDateSelected={onDateSelected}
       
       iconContainer={{ flex: 0.05 }} // keep spacing small
-  iconStyle={{ tintColor: "#FFFFFF" }}
+  iconStyle={{ tintColor: palette.whiteColor }}
     />
   );
 };

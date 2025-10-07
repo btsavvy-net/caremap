@@ -1,3 +1,6 @@
+import { NumericSubtype, QuestionType, TrackingFrequency } from "@/constants/trackTypes";
+import { Units } from "@/constants/units";
+
 export interface User {
   id: string;
   email: string;
@@ -141,7 +144,9 @@ export interface DischargeInstruction {
 
 export interface TrackCategory {
   id: number;
+  code: string;
   name: string;
+  status: "active" | "inactive";
   created_date: Date;
   updated_date: Date;
 }
@@ -149,7 +154,10 @@ export interface TrackCategory {
 export interface TrackItem {
   id: number;
   category_id: number;
+  code: string;
   name: string;
+  frequency: TrackingFrequency;
+  status: "active" | "inactive";
   created_date: Date;
   updated_date: Date;
 }
@@ -157,19 +165,32 @@ export interface TrackItem {
 export interface Question {
   id: number;
   item_id: number;
+  code: string;
   text: string;
-  type: "boolean" | "mcq" | "msq" | "numeric" | "text";
-  instructions?: string;
+  type: QuestionType;
   required: boolean;
-  summary_template?:string;
+  summary_template?: string;
+  status: "active" | "inactive";
   created_date: Date;
   updated_date: Date;
+
+  // optional metadata fields
+  instructions?: string;
+  subtype?: NumericSubtype;
+  units?: Units;
+  min?: number;
+  max?: number;
+  precision?: number;
+  parent_question_id?: number | null;
+  display_condition?: string | null;
 }
 
 export interface ResponseOption {
   id: number;
   question_id: number;
+  code: string;
   text: string;
+  status: "active" | "inactive";
   created_date: Date;
   updated_date: Date;
 }
@@ -191,6 +212,15 @@ export interface TrackItemEntry {
   patient_id: number;
   track_item_id: number;
   date: Date;
+  selected: 0 | 1;
+  created_date: Date;
+  updated_date: Date;
+}
+
+export interface TrackConfigVersion {
+  module: string;
+  version: number;
+  last_synced_at: string | null;
 }
 
 export interface Contact {
@@ -226,5 +256,6 @@ export const tables = {
   RESPONSE_OPTION: "RESPONSE_OPTION",
   TRACK_RESPONSE: "TRACK_RESPONSE",
   TRACK_ITEM_ENTRY: "TRACK_ITEM_ENTRY",
+  TRACK_CONFIG_VERSION: "TRACK_CONFIG_VERSION",
   CONTACT: "CONTACT",
 };
