@@ -11,6 +11,7 @@ import { TrackItemEntryModel } from '@/services/database/models/TrackItemEntryMo
 import { TrackItemModel } from '@/services/database/models/TrackItemModel';
 import { TrackResponseModel } from '@/services/database/models/TrackResponseModel';
 import { logger } from '@/services/logging/logger';
+import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 
 // Helper function to generate unique codes
