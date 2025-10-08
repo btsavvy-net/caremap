@@ -1,7 +1,7 @@
+import { FhirService } from "@/services/core/FhirService";
 import { createPatient, getPatient, getPatientByUserId } from "@/services/core/PatientService";
 import { createUser, isExistingUser } from "@/services/core/UserService";
 import { Patient, User } from "@/services/database/migrations/v1/schema_v1";
-import { FhirService } from "@/services/fhir-service/FhirService";
 
 
 export const PATIENT_ID = 597107;

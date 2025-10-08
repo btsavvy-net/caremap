@@ -32,3 +32,4 @@ export const FhirPatientMapper: Mapper<FhirPatient, DbPatient> = {
         };
     },
 };
+

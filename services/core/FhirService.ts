@@ -1,6 +1,6 @@
 import { createApiService } from "@/services/api/ApiService";
 import { Patient as DbPatient } from "@/services/database/migrations/v1/schema_v1";
-import { FhirPatientMapper } from "@/services/fhir-service/fhir-mappers/FhirPatientMapper";
+import { FhirPatientMapper } from "@/services/fhir-service/fhir-mappers/FhirMapper";
 import { FHIR_CONFIG } from "@/services/fhir-service/fhir.config";
 import { Patient as FhirPatient } from "@/services/fhir-service/resources/types/Patient";
 
