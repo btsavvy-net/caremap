@@ -1,3 +1,4 @@
+import { TrackingFrequency } from "@/constants/trackTypes";
 import { Question, ResponseOption, TrackCategory, TrackItem, TrackResponse } from "@/services/database/migrations/v1/schema_v1";
 
 export type AuthTokens = {
@@ -21,6 +22,7 @@ export const alertTitleMap: Record<AlertType, string> = {
   w: 'Warning',
 };
 
+// Track module types
 export interface TrackCategoryWithItems extends TrackCategory {
   items: TrackItemWithProgress[];
 };
@@ -30,7 +32,7 @@ export interface TrackItemWithProgress {
   entry_id: number;
   completed: number;
   total: number;
-  summaries?: string[];
+  summaries?: string[]; // item-level summaries
 };
 
 export interface TrackItemSelectable {
@@ -47,4 +49,59 @@ export interface QuestionWithOptions {
   question: Question;
   options: ResponseOption[];
   existingResponse?: TrackResponse;
+}
+
+export interface CustomGoalQuestion {
+  text: string;
+  type: string;
+  required: boolean;
+  options?: string[];
+}
+
+export interface CustomGoalParams {
+  name: string;
+  userId: string;
+  patientId: number;
+  date: string;
+  frequency: TrackingFrequency;
+  code: string;
+  questions: CustomGoalQuestion[];
+}
+
+// Insights module types
+export interface InsightTopicRequest {
+  patientId: string;
+}
+
+export interface InsightTopicResponse {
+  insightName: string;
+  insightKey: string;
+}
+
+// Date-based insights types
+export interface DateBasedInsightRequest {
+  patientId: string;
+  selectedDate: string;
+  insightKey: string;
+  questionCode: string;
+}
+
+export interface InsightDataPoint {
+  label: string;
+  date: string;
+  value: number;
+}
+
+export interface InsightSeries {
+  questionId: number;
+  transform: string;
+  topicId: number;
+  topic: string;
+  data: InsightDataPoint[];
+}
+
+export interface DateBasedInsightResponse {
+  startDate: string;
+  endDate: string;
+  series: InsightSeries[];
 }
