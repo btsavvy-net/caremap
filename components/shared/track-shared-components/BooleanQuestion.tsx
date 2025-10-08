@@ -3,7 +3,10 @@ import { View, Text } from "react-native";
 import ResponseOption from "./ResponseOption";
 
 import palette from "@/utils/theme/color";
-import { Question, ResponseOption as _ResponseOption } from "@/services/database/migrations/v1/schema_v1";
+import {
+  Question,
+  ResponseOption as _ResponseOption,
+} from "@/services/database/migrations/v1/schema_v1";
 
 export default function BooleanQuestion({
   question,
@@ -16,6 +19,17 @@ export default function BooleanQuestion({
   onChange: (val: string) => void;
   responses: _ResponseOption[];
 }) {
+  const handleOptionPress = (option: string) => {
+    if (question.required) {
+      onChange(option); // can't deselect if required
+    } else {
+      if (value === option) {
+        onChange(""); // deselect
+      } else {
+        onChange(option);
+      }
+    }
+  };
   return (
     <View className="mb-4">
       <Text
@@ -29,8 +43,11 @@ export default function BooleanQuestion({
         <ResponseOption
           key={opt.id}
           label={String(opt.text)}
-          selected={value === opt.text}
-          onPress={() => onChange(String(opt.text))}
+          selected={
+            String(value).replace(/"/g, "") ===
+            String(opt.text).replace(/"/g, "")
+          }
+          onPress={() => handleOptionPress(String(opt.text))}
         />
       ))}
     </View>

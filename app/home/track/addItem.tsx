@@ -137,7 +137,7 @@ export default function AddItem() {
         {selectableCategories.map((categoryGroup, categoryIndex) => (
           <View key={categoryGroup.category.id} className="mb-6">
             <Text
-              style={{ color: palette.heading }}
+              style={{ color: palette.secondary }}
               className="font-bold text-xl mb-3"
             >
               {categoryGroup.category.name}

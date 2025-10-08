@@ -62,14 +62,14 @@ export default function QuestionFlowScreen() {
     visibleQuestions[visibleQuestions.length - 1]?.id === currentQuestion.id;
 
   useEffect(() => {
-    if (!user) {
-      router.replace(ROUTES.LOGIN);
-      return;
-    }
-    if (!patient) {
-      router.replace(ROUTES.MY_HEALTH);
-      return;
-    }
+  if (!user) {
+    router.replace(ROUTES.LOGIN);
+    return;
+  }
+  if (!patient) {
+    router.replace(ROUTES.MY_HEALTH);
+    return;
+  }
 
     const loadQuestionsWithOptions = async () => {
       if (!itemIdNum) return;
@@ -78,12 +78,10 @@ export default function QuestionFlowScreen() {
         entryIdNum
       );
 
-      const questionsArray = questionWithOptions.map((qwo) => qwo.question);
-      const responseOptionsArray = questionWithOptions.flatMap(
-        (qwo) => qwo.options
-      );
+    const questionsArray = questionWithOptions.map((qwo) => qwo.question);
+    const responseOptionsArray = questionWithOptions.flatMap((qwo) => qwo.options);
 
-      const existingResponses: Record<number, any> = {};
+    const existingResponses: Record<number, any> = {};
 
       questionWithOptions.forEach((qwo) => {
         const response = qwo.existingResponse;
@@ -96,8 +94,7 @@ export default function QuestionFlowScreen() {
           }
           existingResponses[response.question_id] = answerValue;
         }
-      });
-
+      })
       // --------------------------------------------------------------------------------------
       // NOTE:
       // The frontend should use the `existingResponses` object of type Record<number, any>

@@ -8,10 +8,11 @@ const palette = {
   gray300: "#D1D5DB", //on skip
   tabBackgroundColor: "#378793",
   tabIconActiveColor: "#00FFEA",
-  tabIconInactiveColor: "#FFFFFF80",
+  tabIconInactiveColor: "#D1D5DB",
   heading: "#378793",
   progressBar: "#08B828",
   trackCardBackground: "#E6F5FC",
+  whiteColor:"#FFFFFF"
 };
 
 export default palette;

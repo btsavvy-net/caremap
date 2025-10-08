@@ -40,7 +40,7 @@ export default function QuestionRenderer({
           responses={responses}
           value={answer}
           onChange={setAnswer}
-          handleAddOption={setCustomOption}
+          // handleAddOption={setCustomOption}
         />
       );
     case QuestionType.BOOLEAN:
