@@ -1,15 +1,23 @@
 import {
+  QuestionCondition,
+  QuestionType,
+  TrackingFrequency,
+} from "@/constants/trackTypes";
+import {
+  CustomGoalParams,
   QuestionWithOptions,
   TrackCategoryWithItems,
   TrackCategoryWithSelectableItems,
   TrackItemWithProgress,
-  CustomGoalParams,
 } from "@/services/common/types";
-import { QuestionType } from "@/constants/trackTypes";
-
 import { getCurrentTimestamp } from "@/services/core/utils";
 import { useModel } from "@/services/database/BaseModel";
-import { tables } from "@/services/database/migrations/v1/schema_v1";
+import {
+  Question,
+  ResponseOption,
+  tables,
+} from "@/services/database/migrations/v1/schema_v1";
+import { PatientModel } from "@/services/database/models/PatientModel";
 import { QuestionModel } from "@/services/database/models/QuestionModel";
 import { ResponseOptionModel } from "@/services/database/models/ResponseOptionModel";
 import { TrackCategoryModel } from "@/services/database/models/TrackCategoryModel";
@@ -17,7 +25,13 @@ import { TrackItemEntryModel } from "@/services/database/models/TrackItemEntryMo
 import { TrackItemModel } from "@/services/database/models/TrackItemModel";
 import { TrackResponseModel } from "@/services/database/models/TrackResponseModel";
 import { logger } from "@/services/logging/logger";
-import { PatientModel } from "@/services/database/models/PatientModel";
+import "react-native-get-random-values";
+import { v4 as uuidv4 } from "uuid";
+
+// Helper function to generate unique codes
+const generateUniqueCode = (): string => {
+  return uuidv4();
+};
 
 // Single shared instance of models
 const trackCategoryModel = new TrackCategoryModel();
@@ -54,11 +68,12 @@ function getMonday(d: Date): Date {
 
 export function normalizeDateByFrequency(
   dateStr: string,
-  frequency: "daily" | "weekly" | "monthly"
+  frequency: TrackingFrequency
 ): string {
   const date = parseMMDDYYYY(dateStr);
-  if (frequency === "daily") return formatMMDDYYYY(date);
-  if (frequency === "weekly") return formatMMDDYYYY(getMonday(date));
+  if (frequency === TrackingFrequency.DAILY) return formatMMDDYYYY(date);
+  if (frequency === TrackingFrequency.WEEKLY)
+    return formatMMDDYYYY(getMonday(date));
   // monthly
   const first = new Date(date.getFullYear(), date.getMonth(), 1);
   return formatMMDDYYYY(first);
@@ -66,11 +81,11 @@ export function normalizeDateByFrequency(
 
 function shouldCreateEntryForDate(
   dateStr: string,
-  frequency: "daily" | "weekly" | "monthly"
+  frequency: TrackingFrequency
 ): boolean {
   const d = parseMMDDYYYY(dateStr);
-  if (frequency === "daily") return true;
-  if (frequency === "weekly") {
+  if (frequency === TrackingFrequency.DAILY) return true;
+  if (frequency === TrackingFrequency.WEEKLY) {
     return d.getDay() === 1; // Monday
   }
   return d.getDate() === 1; // Monthly -> 1st
@@ -95,14 +110,11 @@ async function ensureSubscribedEntries(
             WHERE tc.status = 'active'
               AND ti.status = 'active'
               AND tie.patient_id = ?
-              AND tie.status = 'active'
+              AND tie.selected = 1
         `,
         [patientId]
       );
-      return rows as {
-        id: number;
-        frequency: "daily" | "weekly" | "monthly";
-      }[];
+      return rows as { id: number; frequency: TrackingFrequency }[];
     }
   );
 
@@ -129,14 +141,17 @@ async function ensureSubscribedEntries(
           patient_id: patientId,
           track_item_id: item.id,
           date: normalizedDate,
-          status: "active" as any,
+          selected: 1,
           created_date: now,
           updated_date: now,
         });
-      } else if ((existing as any).status !== "active") {
+      } else if ((existing as any).selected !== 1) {
         // Reactivate if present but inactive
         await model.updateByFields(
-          { status: "active" as any, updated_date: now },
+          {
+            selected: 1,
+            updated_date: now,
+          },
           { id: (existing as any).id }
         );
       }
@@ -180,23 +195,41 @@ export const getTrackCategoriesWithItemsAndProgress = async (
           ti.created_date,
           ti.updated_date,
           COUNT(DISTINCT r.question_id) AS completed,
-          COUNT(DISTINCT q.id)          AS total
+          COUNT(DISTINCT q.id)          AS total,
+          tie.selected                  AS is_selected
         FROM ${tables.TRACK_ITEM} ti
         INNER JOIN ${tables.TRACK_CATEGORY} tc
           ON tc.id = ti.category_id AND tc.status = 'active'
-        INNER JOIN ${tables.TRACK_ITEM_ENTRY} tie
+        -- Only include items that have active questions
+        INNER JOIN ${tables.QUESTION} q_check
+          ON q_check.item_id = ti.id AND q_check.status = 'active'
+        LEFT JOIN ${tables.TRACK_ITEM_ENTRY} tie
           ON tie.track_item_id = ti.id
          AND tie.patient_id = ?
          AND tie.date = ?
-         AND tie.status = 'active'
         LEFT JOIN ${tables.QUESTION} q
           ON q.item_id = ti.id AND q.status = 'active'
         LEFT JOIN ${tables.TRACK_RESPONSE} r
           ON r.track_item_entry_id = tie.id
+          AND tie.date = ?
         WHERE ti.status = 'active'
-        GROUP BY tie.id, ti.id, ti.name, ti.code, ti.frequency, ti.status, ti.category_id, ti.created_date, ti.updated_date
+          AND (
+            (tie.selected = 1)
+            OR (
+              tie.id IS NOT NULL 
+              AND EXISTS (
+                SELECT 1 
+                FROM ${tables.TRACK_RESPONSE} r2
+                INNER JOIN ${tables.TRACK_ITEM_ENTRY} tie2
+                  ON tie2.id = r2.track_item_entry_id
+                  AND tie2.date = ? 
+                WHERE r2.track_item_entry_id = tie.id
+              )
+            )
+          )
+        GROUP BY tie.id, ti.id, ti.name, ti.code, ti.frequency, ti.status, ti.category_id, ti.created_date, ti.updated_date, tie.selected
       `,
-          [patientId, date]
+          [patientId, date, date, date]
         );
         return rows as any[];
       });
@@ -275,7 +308,7 @@ export const getAllCategoriesWithSelectableItems = async (
                         SELECT 1 FROM ${tables.TRACK_ITEM_ENTRY} tie2
                         WHERE tie2.track_item_id = ti.id
                           AND tie2.patient_id = ?
-                          AND tie2.status = 'active'
+                          AND tie2.selected = 1
                     ) THEN 1 ELSE 0 END AS selected
                 FROM ${tables.TRACK_ITEM} ti
                 INNER JOIN ${tables.TRACK_CATEGORY} tc ON tc.id = ti.category_id AND tc.status = 'active'
@@ -358,7 +391,11 @@ export const getQuestionsWithOptions = async (
     }
 
     return questions.map((q: any) => ({
-      question: q,
+      question: {
+        ...q,
+        parent_question_id: q.parent_question_id ?? null,
+        display_condition: q.display_condition ?? null,
+      },
       options: allOptions.filter((opt: any) => opt.question_id === q.id),
       existingResponse: responseMap.get(q.id) ?? undefined,
     }));
@@ -366,7 +403,7 @@ export const getQuestionsWithOptions = async (
 
   logger.debug(
     "getQuestionsWithOptions completed",
-    { itemId },
+    { itemId, entryId },
     `${JSON.stringify(result)}`
   );
   return result;
@@ -452,7 +489,7 @@ export const addTrackItemOnDate = async (
   const item = await useModel(trackItemModel, async (model) =>
     model.getFirstByFields({ id: itemId })
   );
-  const frequency = (item?.frequency as any) || "daily";
+  const frequency = item?.frequency || TrackingFrequency.DAILY;
   const normalizedDate = normalizeDateByFrequency(date, frequency);
 
   await useModel(trackItemEntryModel, async (model) => {
@@ -465,7 +502,10 @@ export const addTrackItemOnDate = async (
     if (existing) {
       // Reactivate if previously inactive
       await model.updateByFields(
-        { status: "active" as any, updated_date: now },
+        {
+          selected: 1,
+          updated_date: now,
+        },
         { id: (existing as any).id }
       );
       logger.debug("linkItemToPatientDate: Item reactivated", {
@@ -481,7 +521,7 @@ export const addTrackItemOnDate = async (
       patient_id: patientId,
       track_item_id: itemId,
       date: normalizedDate,
-      status: "active" as any,
+      selected: 1,
       created_date: now,
       updated_date: now,
     });
@@ -503,16 +543,16 @@ export const removeTrackItemFromDate = async (
 ): Promise<void> => {
   logger.debug("unlinkItemFromPatientDate called", { itemId, patientId, date });
 
-  // Deactivate all entries for this item/patient (both past and future) and preserve responses
   await useModel(trackItemEntryModel, async (model) => {
+    // 1. Mark all entries as deselected for this item and patient
     await model.updateByFields(
-      { status: "inactive" as any, updated_date: now },
-      { track_item_id: itemId, patient_id: patientId }
+      { selected: 0, updated_date: now },
+      { patient_id: patientId, track_item_id: itemId }
     );
   });
 
   logger.debug(
-    "unlinkItemFromPatientDate completed (soft-deleted all entries)",
+    "unlinkItemFromPatientDate completed (deselected all future entries and past entries without responses)",
     { itemId, patientId }
   );
 };
@@ -566,6 +606,154 @@ export const getSummariesForItem = async (
   });
 };
 
+/**
+ * ------------------------------------------------------------------------------------------------------------
+ * NOTE: Conditional logic previously used value-based checks, e.g., {"equals": "yes"}.
+ * Now updated to use option codes instead, e.g., {"equals": "o_yes"} for MSQ/MCQ types.
+ * Service layer update is pending and will be handled in a follow-up PR.
+ * ------------------------------------------------------------------------------------------------------------
+ */
+
+// Utility to check if a question is visible given current answers
+export const isQuestionVisible = (
+  q: Question,
+  answers: Record<number, any>,
+  allQuestions?: Question[],
+  allOptions?: ResponseOption[]
+): boolean => {
+  if (!q.parent_question_id || !q.display_condition) return true;
+
+  try {
+    const cond = JSON.parse(q.display_condition);
+    const parentAnswer = answers[q.parent_question_id];
+    let parsedParentAnswer: any;
+
+    try {
+      parsedParentAnswer = JSON.parse(parentAnswer);
+    } catch {
+      parsedParentAnswer = parentAnswer;
+    }
+
+    // Handle parent_answered condition using enum
+    if (cond[QuestionCondition.PARENT_RES_EXISTS] === true) {
+      return (
+        parsedParentAnswer !== undefined &&
+        parsedParentAnswer !== null &&
+        parsedParentAnswer !== "" &&
+        (!Array.isArray(parsedParentAnswer) || parsedParentAnswer.length > 0)
+      );
+    }
+
+    // Find parent question to determine its type
+    const parentQuestion = allQuestions?.find(
+      (question) => question.id === q.parent_question_id
+    );
+    const parentQuestionType = parentQuestion?.type;
+
+    // Map text values to option codes for boolean, multi-choice, and multi-select questions
+    if (
+      parentQuestionType &&
+      (parentQuestionType === QuestionType.BOOLEAN ||
+        parentQuestionType === QuestionType.MCQ ||
+        parentQuestionType === QuestionType.MSQ) &&
+      allOptions?.length
+    ) {
+      // Get options for the parent question
+      const parentOptions = allOptions.filter(
+        (opt) => opt.question_id === q.parent_question_id
+      );
+
+      // Map text values to option codes
+      if (Array.isArray(parsedParentAnswer)) {
+        // Handle multi-select case
+        const mappedAnswers = parsedParentAnswer.map((answer) => {
+          const matchingOption = parentOptions.find(
+            (opt) => opt.text === answer
+          );
+          return matchingOption ? matchingOption.code : answer;
+        });
+        parsedParentAnswer = mappedAnswers;
+      } else if (typeof parsedParentAnswer === "string") {
+        // Handle boolean and multi-choice case
+        const matchingOption = parentOptions.find(
+          (opt) => opt.text === parsedParentAnswer
+        );
+        if (matchingOption) {
+          parsedParentAnswer = matchingOption.code;
+        }
+      }
+    }
+
+    const numericAnswer = Number(parsedParentAnswer);
+
+    // Operator checks using enum - now supporting option codes
+    const operators: [QuestionCondition, (value: any) => boolean][] = [
+      [
+        QuestionCondition.EQ,
+        (v) =>
+          Array.isArray(parsedParentAnswer)
+            ? parsedParentAnswer.includes(v)
+            : parsedParentAnswer === v,
+      ],
+      [
+        QuestionCondition.NOT_EQ,
+        (v) =>
+          Array.isArray(parsedParentAnswer)
+            ? !parsedParentAnswer.includes(v)
+            : parsedParentAnswer !== v,
+      ],
+      [
+        QuestionCondition.GT,
+        (v) => !isNaN(numericAnswer) && numericAnswer > Number(v),
+      ],
+      [
+        QuestionCondition.GTE,
+        (v) => !isNaN(numericAnswer) && numericAnswer >= Number(v),
+      ],
+      [
+        QuestionCondition.LT,
+        (v) => !isNaN(numericAnswer) && numericAnswer < Number(v),
+      ],
+      [
+        QuestionCondition.LTE,
+        (v) => !isNaN(numericAnswer) && numericAnswer <= Number(v),
+      ],
+      [
+        QuestionCondition.IN,
+        (v) =>
+          Array.isArray(v) &&
+          (Array.isArray(parsedParentAnswer)
+            ? v.some((val) => parsedParentAnswer.includes(val))
+            : v.includes(parsedParentAnswer)),
+      ],
+      [
+        QuestionCondition.NOT_IN,
+        (v) =>
+          Array.isArray(v) &&
+          (Array.isArray(parsedParentAnswer)
+            ? !v.some((val) => parsedParentAnswer.includes(val))
+            : !v.includes(parsedParentAnswer)),
+      ],
+    ];
+
+    for (const [key, check] of operators) {
+      if (cond[key] !== undefined) {
+        return check(cond[key]);
+      }
+    }
+
+    // No known condition matched → default visible
+    return true;
+  } catch (err) {
+    console.warn("Invalid display_condition JSON:", q.display_condition, err);
+    return true;
+  }
+};
+
+/*
+ Custom Goals methods :
+*/
+
 export const addCustomGoal = async (
   params: CustomGoalParams
 ): Promise<number> => {
@@ -582,7 +770,7 @@ export const addCustomGoal = async (
   });
 
   // Generate a unique code for this track item
-  const trackItemCode = `CUSTOM_${Date.now()}`;
+  const trackItemCode = generateUniqueCode();
 
   // Create a new track item for the custom goal
   const trackItemId = await useModel(trackItemModel, async (model) => {
@@ -603,7 +791,7 @@ export const addCustomGoal = async (
     const question = questions[i];
 
     // Generate a unique code for each question
-    const questionCode = `CUSTOM_Q_${Date.now()}_${i}`;
+    const questionCode = generateUniqueCode();
 
     const questionId = await useModel(questionModel, async (model) => {
       const result = await model.insert({
@@ -624,7 +812,7 @@ export const addCustomGoal = async (
       await useModel(responseOptionModel, async (model) => {
         await model.insert({
           question_id: questionId,
-          code: `OPTION_${Date.now()}_YES`,
+          code: generateUniqueCode(),
           text: "Yes",
           status: "active" as any,
           created_date: now,
@@ -632,7 +820,7 @@ export const addCustomGoal = async (
         });
         await model.insert({
           question_id: questionId,
-          code: `OPTION_${Date.now()}_NO`,
+          code: generateUniqueCode(),
           text: "No",
           status: "active" as any,
           created_date: now,
@@ -656,7 +844,7 @@ export const addCustomGoal = async (
             const opt = cleanOptions[j];
             await model.insert({
               question_id: questionId,
-              code: `OPTION_${Date.now()}_${j}`,
+              code: generateUniqueCode(),
               text: opt.trim(),
               status: "active" as any,
               created_date: now,
@@ -679,10 +867,8 @@ export const addCustomGoal = async (
 
 export const editCustomGoal = async (
   trackItemId: number,
-  patientId: number,
   updates: {
     name?: string;
-    frequency?: "daily" | "weekly" | "monthly";
     questions?: {
       id?: number;
       text: string;
@@ -692,7 +878,7 @@ export const editCustomGoal = async (
     }[];
   }
 ): Promise<void> => {
-  logger.debug("editCustomGoal called", { trackItemId, patientId,updates });
+  logger.debug("editCustomGoal called", { trackItemId, updates });
 
   // Update name if provided
   if (updates.name) {
@@ -703,7 +889,6 @@ export const editCustomGoal = async (
       );
     });
   }
-  
 
   // Handle questions
   if (updates.questions && updates.questions.length > 0) {
@@ -729,9 +914,7 @@ export const editCustomGoal = async (
             const opts = q.options ?? [];
             for (const opt of opts) {
               await model.insert({
-                code: `RESP_${Date.now()}_${Math.random()
-                  .toString(36)
-                  .slice(2, 8)}`,
+                code: generateUniqueCode(),
                 question_id: q.id,
                 text: opt.trim(),
                 status: "active" as any,
@@ -758,30 +941,14 @@ export const editCustomGoal = async (
         });
 
         if (q.options) {
-          // await useModel(responseOptionModel, async (model) => {
-          //     const opts = q.options ?? [];
-          //     for (const opt of opts) {
-          //         await model.insert({
-          //             code: `RESP_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-          //             question_id: questionId,
-          //             text: opt.trim(),
-          //             status: 'active' as any,
-          //             created_date: now,
-          //             updated_date: now,
-          //         });
-          //     }
-          // });
           await useModel(responseOptionModel, async (model) => {
-            // Soft delete existing options
-            await model.updateByFields(
-              { status: "inactive" as any, updated_date: now },
-              { question_id: q.id }
-            );
             const opts = q.options ?? [];
-            // Insert new options
             for (const opt of opts) {
               await model.insert({
-                question_id: q.id,
+                code: `RESP_${Date.now()}_${Math.random()
+                  .toString(36)
+                  .slice(2, 8)}`,
+                question_id: questionId,
                 text: opt.trim(),
                 status: "active" as any,
                 created_date: now,
@@ -794,7 +961,7 @@ export const editCustomGoal = async (
     }
   }
 
-  logger.debug("editCustomGoal completed", { trackItemId ,});
+  logger.debug("editCustomGoal completed", { trackItemId });
 };
 
 export const removeCustomGoal = async (
