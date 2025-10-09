@@ -91,10 +91,11 @@ const formatDataPoints = (data: any[], frequency: 'daily' | 'weekly' | 'monthly'
             return result;
 
         case 'monthly':
-            // Show first day of each month in the quarter
-            const quarterStart = startOfQuarter(startDate);
+            // Show current month and previous 2 months (3 months total)
+            const currentMonth = startOfMonth(startDate);
             for (let i = 0; i < 3; i++) {
-                const monthDate = addMonths(quarterStart, i);
+                // Start from 2 months ago and move forward to current month
+                const monthDate = addMonths(currentMonth, -2 + i);
                 const dateStr = format(monthDate, 'yyyy-MM-dd');
                 const dataPoint = data.find(d => d.date === dateStr);
 
