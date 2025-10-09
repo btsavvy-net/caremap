@@ -23,8 +23,8 @@ const getDateRange = (selectedDate: string) => {
     const date = parse(selectedDate, 'yyyy-MM-dd', new Date());
 
     // For daily items: get the week range (Mon-Sun)
-    const weekStart = startOfWeek(date);
-    const weekEnd = endOfWeek(date);
+    const weekStart = startOfWeek(date, { weekStartsOn: 1 }); // 1 represents Monday
+    const weekEnd = endOfWeek(date, { weekStartsOn: 1 });
 
     // For weekly items: get the month range to show all Mondays
     const monthStart = startOfMonth(date);
@@ -58,7 +58,7 @@ const formatDataPoints = (data: any[], frequency: 'daily' | 'weekly' | 'monthly'
         case 'daily':
             // Show week trend (Mon-Sun)
             for (let i = 0; i < 7; i++) {
-                const currentDate = addDays(startOfWeek(startDate), i);
+                const currentDate = addDays(startOfWeek(startDate, { weekStartsOn: 1 }), i);
                 const dateStr = format(currentDate, 'yyyy-MM-dd');
                 const dataPoint = data.find(d => d.date === dateStr);
 
@@ -300,15 +300,28 @@ export const getDateBasedInsights = async (
             });
         }
 
+        // Determine the appropriate date range based on the insight's frequency
+        let startDate = dateRanges.daily.start;
+        let endDate = dateRanges.daily.end;
+        
+        if (insightConfig.frequencies.includes('monthly')) {
+            startDate = dateRanges.monthly.start;
+            endDate = dateRanges.monthly.end;
+        } else if (insightConfig.frequencies.includes('weekly')) {
+            startDate = dateRanges.weekly.start;
+            endDate = dateRanges.weekly.end;
+        }
+        
         logger.debug('getDateBasedInsights response', {
-            startDate: dateRanges.monthly.start,
-            endDate: dateRanges.monthly.end,
+            startDate,
+            endDate,
+            frequency: insightConfig.frequencies[0],
             series
         });
 
         return {
-            startDate: dateRanges.monthly.start,
-            endDate: dateRanges.monthly.end,
+            startDate,
+            endDate,
             series
         };
     });
