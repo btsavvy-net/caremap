@@ -1,5 +1,4 @@
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
-import { Badge, BadgeText } from "@/components/ui/badge";
 import { Box } from "@/components/ui/box";
 import { Divider } from "@/components/ui/divider";
 import { EditIcon, Icon, ShareIcon } from "@/components/ui/icon";
@@ -15,14 +14,16 @@ import palette from "@/utils/theme/color";
 import { Route, router } from "expo-router";
 import { Camera, User } from "lucide-react-native";
 import { useContext, useEffect, useState } from "react";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import { Image, Text, TouchableOpacity, View, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Grid, GridItem } from "@/components/ui/grid";
 
 export default function HealthProfile() {
   const { user, setUserData } = useContext(UserContext);
   const { patient, setPatientData } = useContext(PatientContext);
   const [loading, setLoading] = useState(true);
-
+const COLUMNS = 2 as const;
+  const gridColsClass = "grid-cols-2";
   useEffect(() => {
     initializeAuthSession(setUserData).finally(() => setLoading(false));
   }, []);
@@ -77,24 +78,24 @@ export default function HealthProfile() {
     },
     {
       name: "Notes",
-      image: require("@/assets/images/hospitalization.png"),
+      image: require("@/assets/images/notes.png"),
       badge: 4,
       link: ROUTES.NOTES,
     },
     {
-      name: "Test 1",
-      image: require("@/assets/images/medicalOverview.png"),
-      badge: 6,
-      link: ROUTES.MEDICAL_OVERVIEW,
+      name: "Medical Equipments",
+      image: require("@/assets/images/medical-equipment.png"),
+      badge: 4,
+      link: ROUTES.MEDICAL_EQUIPMENTS,
     },
     {
-      name: "Test 2",
-      image: require("@/assets/images/emergencyCare.png"),
-      badge: 9,
-      link: ROUTES.MEDICAL_OVERVIEW,
+      name: "High level Goals",
+      image: require("@/assets/images/highLevelGoals.png"),
+      badge: 4,
+      link: ROUTES.HIGH_LEVEL_GOALS,
     },
+    
   ];
-
   if (loading) {
     return (
       <View className="flex-1 items-center justify-center">
@@ -112,109 +113,135 @@ export default function HealthProfile() {
   }
 
   return (
-    <SafeAreaView className="flex-1 m-0">
-      <View style={{ backgroundColor: palette.primary }} className="py-4 px-6 ">
-        <Text className="text-xl text-white font-bold text-center ">
-          My Health
-        </Text>
-
+   <SafeAreaView
+      edges={["right", "top", "left"]}
+      className="flex-1 m-0 bg-white"
+    >
+      <View
+        style={{ backgroundColor: palette.primary }}
+        className="pt-3 pb-4 px-6"
+      >
+        {/* Top row: Title + actions */}
         <View className="flex-row items-center justify-between">
-          <Avatar size="xl">
+          <Text className="text-2xl text-white font-semibold ml-2 tracking-wide">
+            My Health
+          </Text>
+          <View className="flex-row items-center">
+            <TouchableOpacity
+              className="p-2 mr-"
+              onPress={() => router.push(ROUTES.EDIT_PROFILE)}
+              accessibilityLabel="Edit profile"
+            >
+              <Icon as={EditIcon} size="lg" className="text-white" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              className="p-2 mr-1"
+              onPress={() => router.push(ROUTES.EDIT_PROFILE)}
+              accessibilityLabel="Share My Health"
+            >
+              <Icon as={ShareIcon} size="lg" className="text-white" />
+            </TouchableOpacity>
+          </View>
+        </View>
+ 
+        {/* User row: Avatar + details */}
+        <View className="mt-4 flex-row items-center">
+          <Avatar className="border border-white/60 bg-white/10 w-20 h-20">
             {patient?.profile_picture ? (
               <AvatarImage source={{ uri: patient.profile_picture }} />
             ) : (
-              <View className="w-full h-full items-center justify-center bg-gray-200 rounded-full">
-                <Icon as={User} size="xl" className="text-gray-500" />
+              <View className="w-full h-full items-center justify-center rounded-full">
+                <Icon as={User} className="text-white/90 w-9 h-9" />
               </View>
             )}
           </Avatar>
-
-          <View className="mr-4">
-            <Text className="text-lg text-white font-semibold">
-              {`${patient?.first_name} ${patient?.last_name}`}
+ 
+          <View className="ml-4 flex-1">
+            <Text
+              className="text-white text-xl font-semibold"
+              numberOfLines={1}
+            >
+              {`${patient?.first_name ?? ""} ${
+                patient?.last_name ?? ""
+              }`.trim() || "Your name"}
             </Text>
-            <Text className="text-white">
+ 
+            <Text className="text-white font-semibold mt-1">
               Age:{" "}
               {calculateAge(patient?.date_of_birth)
                 ? `${calculateAge(patient?.date_of_birth)} years`
                 : "Not set"}
             </Text>
-            <Text className="text-white">
+            <Text className="text-white font-semibold">
               Weight:{" "}
               {patient?.weight
                 ? `${patient.weight} ${patient.weight_unit ?? ""}`
                 : "Not set"}
             </Text>
           </View>
-          <View className="flex-row items-center">
-            <TouchableOpacity onPress={() => router.push(ROUTES.EDIT_PROFILE)}>
-              <Icon as={EditIcon} size="lg" className="text-white m-2" />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push(ROUTES.EDIT_PROFILE)}>
-              <Icon as={ShareIcon} size="lg" className="text-white m-2" />
-            </TouchableOpacity>
-          </View>
         </View>
       </View>
 
-      <View className="px-5 py-1">
-        <View>
-          {Array.from({ length: Math.ceil(medicalTiles.length / 2) }).map(
-            (_, rowIndex) => (
-              <View key={rowIndex}>
-                <View className="flex-row">
-                  {[0, 1].map((colIndex) => {
-                    const tileIndex = rowIndex * 2 + colIndex;
-                    if (tileIndex >= medicalTiles.length) return null;
-                    const tile = medicalTiles[tileIndex];
-                    return (
-                      <TouchableOpacity
-                        onPress={() => router.push(tile.link as Route)}
-                        key={tileIndex}
-                        className="flex-1
-                         
-                         items-center"
+      {/* --- Tiles Grid (gluestack Grid) --- */}
+      <ScrollView
+        className="bg-white flex-1"
+        contentContainerStyle={{ paddingBottom: 24 }}
+      >
+        <Box className="flex-1 p-2">
+          <View className=" overflow-hidden bg-white">
+            <Grid className="gap-0" _extra={{ className: gridColsClass }}>
+              {medicalTiles.map((tile, index) => {
+                const isLastOdd =
+                  medicalTiles.length % COLUMNS === 1 &&
+                  index === medicalTiles.length - 1;
+
+                return (
+                  <GridItem
+                    key={tile.name + index}
+                    className={`items-stretch justify-stretch`}
+                    _extra={{
+                      className: isLastOdd ? "col-span-2" : "col-span-1",
+                    }}
+                  >
+                    <TouchableOpacity
+                      activeOpacity={0.65}
+                      onPress={() => router.push(tile.link as any)}
+                      style={{
+                        margin: 8,
+                        backgroundColor: "white",
+                        borderRadius: 6,
+                        minHeight: 125,
+                        // ✅ Cross-platform shadow
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.35,
+                        shadowRadius: 3.84,
+                        elevation: 4,
+                      }}
+                      className="items-center justify-center"
+                    >
+                      <View className="relative">
+                        <Image
+                          source={tile.image}
+                          style={{ width: 50, height: 50 }}
+                          resizeMode="contain"
+                        />
+                      </View>
+
+                      <Text
+                        style={{ color: palette.heading }}
+                        className="mt-3 text-lg font-semibold text-center"
                       >
-                        <View className="p-10 flex-row items-center justify-stretch">
-                          <Box className="items-center w-[125px]">
-                            <Image source={tile.image} resizeMode="contain" />
-                            {tile.badge !== null && (
-                              <Badge
-                                style={{ backgroundColor: palette.primary }}
-                                className="absolute -top-1 -right-1 rounded-full z-10 h-[22px] w-[22px]"
-                              >
-                                <BadgeText className="text-xs text-white">
-                                  {tile.badge}
-                                </BadgeText>
-                              </Badge>
-                            )}
-                            <Text className="text-center text-base flex-shrink pt-2">
-                              {tile.name}
-                            </Text>
-                          </Box>
-                          <Box>
-                            <Image
-                              source={require("@/assets/images/arrow.png")}
-                              className="w-4 h-4 ml-2"
-                              resizeMode="contain"
-                            />
-                          </Box>
-                        </View>
-                        {colIndex === 0 && tileIndex % 2 === 0 && (
-                          <View className="absolute right-0 top-0 bottom-0 w-px bg-black" />
-                        )}
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-                {rowIndex < Math.ceil(medicalTiles.length / 2) - 1 && (
-                  <Divider className="bg-black" />
-                )}
-              </View>
-            )
-          )}
-        </View>
-      </View>
+                        {tile.name}
+                      </Text>
+                    </TouchableOpacity>
+                  </GridItem>
+                );
+              })}
+            </Grid>
+          </View>
+        </Box>
+      </ScrollView>
     </SafeAreaView>
   );
 }
