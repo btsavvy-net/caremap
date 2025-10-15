@@ -3,4 +3,4 @@ export const FHIR_CONFIG = {
   TIMEOUT: 8000,
 };
 
-export const PATIENT_ID = 53373;
+export const PATIENT_FHIR_ID = 53373;

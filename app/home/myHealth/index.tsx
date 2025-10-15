@@ -9,11 +9,12 @@ import { initializeAuthSession } from "@/services/auth-service/google-auth";
 import { syncPatientSession } from "@/services/auth-service/session-service";
 import { ShowAlert } from "@/services/common/ShowAlert";
 import { calculateAge } from "@/services/core/utils";
+import { startFhirSync } from "@/services/fhir-service/fhir-sync-manager";
 import { logger } from "@/services/logging/logger";
 import { ROUTES } from "@/utils/route";
 import palette from "@/utils/theme/color";
 import { Route, router } from "expo-router";
-import { Camera, User } from "lucide-react-native";
+import { User } from "lucide-react-native";
 import { useContext, useEffect, useState } from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -43,6 +44,11 @@ export default function HealthProfile() {
 
     sync();
   }, [user]);
+
+  useEffect(() => {
+    if (!patient) return;
+    startFhirSync(patient);
+  }, [patient]);
 
   const medicalTiles = [
     {

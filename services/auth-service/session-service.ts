@@ -2,7 +2,7 @@ import { FhirService } from "@/services/core/FhirService";
 import { createPatient, getPatient, getPatientByUserId } from "@/services/core/PatientService";
 import { createUser, isExistingUser } from "@/services/core/UserService";
 import { Patient, User } from "@/services/database/migrations/v1/schema_v1";
-import { PATIENT_ID } from "@/services/fhir-service/fhir-config";
+import { PATIENT_FHIR_ID } from "@/services/fhir-service/fhir-config";
 
 
 export async function syncPatientSession(user: User): Promise<Patient> {
@@ -16,11 +16,6 @@ export async function syncPatientSession(user: User): Promise<Patient> {
         await createUser(user);
     }
 
-    // Pull FHIR Patient Data
-    const fhirPatientData = await FhirService.getPatient(PATIENT_ID.toString());
-    console.log("FHIR Patient: ", JSON.stringify(fhirPatientData));
-    fhirPatientData.user_id = user.id;
-
     // Get patient by user_id
     const existingPatient = await getPatientByUserId(user.id);
     if (existingPatient) {
@@ -29,6 +24,12 @@ export async function syncPatientSession(user: User): Promise<Patient> {
         if (!fullPatient) throw new Error("Patient fetch failed.");
         return fullPatient;
     }
+
+    // Pull FHIR Patient Data
+    const fhirPatientData = await FhirService.getPatient(PATIENT_FHIR_ID.toString());
+    console.log("FHIR Patient: ", JSON.stringify(fhirPatientData));
+    fhirPatientData.user_id = user.id;
+    fhirPatientData.fhir_id = PATIENT_FHIR_ID.toString();
 
     let newPatient = await createPatient(fhirPatientData);
 

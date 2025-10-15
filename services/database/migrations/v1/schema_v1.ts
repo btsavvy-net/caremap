@@ -7,9 +7,19 @@ export interface User {
   name: string;
 }
 
+export interface SyncPatientData {
+  id: string;
+  patient_fhir_id: string;
+  last_synced_at: Date | null;
+  status: boolean;
+  created_date: Date;
+  updated_date: Date;
+}
+
 export interface Patient {
   id: number;
   user_id: string;
+  fhir_id:string;
   blood_type?: string;
   date_of_birth?: Date;
   first_name: string;
@@ -238,6 +248,7 @@ export interface Contact {
 
 export const tables = {
   USER: "USER",
+  SYNC_PATIENT_DATA: "SYNC_PATIENT_DATA",
   PATIENT: "PATIENT",
   PATIENT_SNAPSHOT: "PATIENT_SNAPSHOT",
   PATIENT_CONDITION: "PATIENT_CONDITION",

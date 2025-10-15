@@ -10,9 +10,19 @@ export const up = async (db: SQLiteDatabase) => {
       name TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS ${tables.SYNC_PATIENT_DATA} (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      patient_fhir_id TEXT NOT NULL UNIQUE,
+      last_synced_at TEXT,
+      status INTEGER NOT NULL DEFAULT 0,
+      created_date TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_date TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
     CREATE TABLE IF NOT EXISTS ${tables.PATIENT} (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id TEXT NOT NULL UNIQUE,
+      fhir_id TEXT NOT NULL UNIQUE,
       blood_type TEXT,
       date_of_birth TEXT,
       first_name TEXT NOT NULL,
