@@ -1,3 +1,5 @@
+import More from "@/app/home/more";
+
 export const ROUTE_PREFIX = {
   PUBLIC: "/public",
   AUTH: "/auth",
@@ -6,9 +8,12 @@ export const ROUTE_PREFIX = {
   MEDICAL_OVERVIEW: "/home/myHealth/medicalOverview",
   MEDICAL_HISTORY: "/home/myHealth/medicalHistory" as const,
   TRACK: "/home/track" as const,
+  More: "/home/more" as const,
 } as const;
 
 export const ROUTES = {
+    MORE: `${ROUTE_PREFIX.More}` as const,
+
   LAUNCH: `${ROUTE_PREFIX.PUBLIC}/launch` as const,
   ONBOARDING: `${ROUTE_PREFIX.PUBLIC}/onboarding` as const,
   LOGIN: `${ROUTE_PREFIX.AUTH}/login` as const,
