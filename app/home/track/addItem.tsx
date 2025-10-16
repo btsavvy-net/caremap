@@ -207,7 +207,11 @@ export default function AddItem() {
             onPress={() => router.push("/home/track/manageCustomGoals")}
             className="flex-row items-center justify-center border border-dashed border-gray-400 rounded-xl py-3 px-4 mb-3"
           >
-            <Text className="text-cyan-600 font-semibold">
+            <Text
+            style={{
+                color: palette.primary,
+              }}
+               className="font-semibold">
               Manage Custom Goals
             </Text>
           </TouchableOpacity>
@@ -217,7 +221,12 @@ export default function AddItem() {
             onPress={() => router.push(ROUTES.TRACK_CUSTOM_GOALS)}
             className="flex-row items-center justify-center border border-dashed border-gray-400 rounded-xl py-3 px-4 mb-3"
           >
-            <Text className="text-cyan-600 font-semibold">
+            <Text
+              style={{
+                color: palette.primary,
+              }}
+              className="t font-semibold"
+            >
               + Add Custom Goal
             </Text>
           </TouchableOpacity>

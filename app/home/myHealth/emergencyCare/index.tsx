@@ -4,13 +4,11 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  Keyboard,
-  TouchableWithoutFeedback,
   FlatList,
+  ScrollView,
+  KeyboardAvoidingView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ChevronLeft } from "lucide-react-native";
-import palette from "@/utils/theme/color";
 import Header from "@/components/shared/Header";
 import { Divider } from "@/components/ui/divider";
 import { useCustomToast } from "@/components/shared/useCustomToast";
@@ -25,6 +23,11 @@ import {
   getPatientEmergencyCaresByPatientId,
   updatePatientEmergencyCare,
 } from "@/services/core/PatientEmergencyCareService";
+import { router } from "expo-router";
+import { CustomButton } from "@/components/shared/CustomButton";
+import IconLabelHeading from "@/components/shared/IconLabelHeading";
+import { CustomFormInput } from "@/components/shared/CustomFormInput";
+import { Textarea, TextareaInput } from "@/components/ui/textarea";
 
 export default function EmergencyCareScreen() {
   const { patient } = useContext(PatientContext);
@@ -108,36 +111,39 @@ export default function EmergencyCareScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <Header title="Emergency Care" />
+    <SafeAreaView edges={["right", "top", "left"]} className="flex-1 bg-white">
+      <Header
+        title="Emergency Care"
+        right={
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text className="text-white font-medium">Cancel</Text>
+          </TouchableOpacity>
+        }
+      />
 
-      <View className="p-4 bg-white flex-1">
-        <Text
-          style={{ color: palette.heading }}
-          className="text-lg font-semibold mb-2"
-        >
-          Guidance in case of Emergency
-        </Text>
-        <Divider className="bg-gray-300" />
-        <Text className="text-gray-700 mt-2 mb-3">
-          List specific guidance for others on what steps to take in response to
-          emergency care situations.
-        </Text>
-        <Text className="text-gray-500  mb-4">
-          e.g. in the event of a severe allergic reaction give one 0.3 mg
-          injection into the muscle of the thigh
-        </Text>
-        <Divider className="bg-gray-300" />
+      <View className="px-5 pt-5 bg-white flex-1">
+        <IconLabelHeading
+            icon={require("@/assets/images/emergencyCare.png")}
+            label="Guidance in case of Emergency"
+            subtitle="List specific guidance for others on what steps to take in response to
+          emergency care situations."
+            count={careList.length}
+          />
+
+        
+        
+        
+        {/* <Divider className="bg-gray-300" /> */}
         <FlatList
-      className="mt-2"
+          className="mt-2"
           data={careList}
           keyExtractor={(item) => item.id.toString()}
           showsVerticalScrollIndicator={true}
           renderItem={({ item }) => (
             <View className="flex-row items-start border border-gray-300 rounded-xl p-4 mb-4">
               <View className="ml-3 flex-1">
-                <Text className="font-semibold text-base">{item.topic}</Text>
-                <Text className="text-gray-500 text-sm mt-1">
+                <Text className="font-semibold text-lg">{item.topic}</Text>
+                <Text className="text-gray-500 text-base mt-1">
                   {item.details}
                 </Text>
               </View>
@@ -161,17 +167,14 @@ export default function EmergencyCareScreen() {
           }
         />
 
-        <Divider className="bg-gray-300" />
-
-        <TouchableOpacity
-          style={{ backgroundColor: palette.primary }}
-          className="py-3 rounded-lg mt-2"
+        <Divider className="bg-gray-300 mb-2" />
+        <View className="py-4">
+           <CustomButton
+          title="Add emergency care"
           onPress={() => setShowForm(true)}
-        >
-          <Text className="text-white font-bold text-center">
-            Add current condition
-          </Text>
-        </TouchableOpacity>
+        />
+        </View>
+       
       </View>
 
       <CustomAlertDialog
@@ -180,18 +183,12 @@ export default function EmergencyCareScreen() {
           setShowDialog(false);
           setItemToDelete(null);
         }}
-        title="Confirm Deletion" 
+        title="Confirm Deletion"
         description={
           itemToDelete
             ? `Are you sure you want to delete \"${itemToDelete.topic}\"?`
             : "Are you sure you want to delete this item?"
         }
-        confirmText="Delete" 
-        cancelText="Cancel" 
-        confirmButtonProps={{
-          style: { backgroundColor: palette.primary, marginLeft: 8 },
-        }}
-        cancelButtonProps={{ variant: "outline" }}
         onConfirm={async () => {
           if (itemToDelete) {
             await deletePatientEmergencyCare(itemToDelete.id);
@@ -236,61 +233,72 @@ function EmergencyCareForm({
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <SafeAreaView className="flex-1 bg-white">
-        <View
-          className="py-3 flex-row items-center"
-          style={{ backgroundColor: palette.primary }}
-        >
-          <TouchableOpacity onPress={onClose} className="p-2 ml-2">
-            <ChevronLeft color="white" size={24} />
+    <SafeAreaView edges={["right", "top", "left"]} className="flex-1 bg-white">
+      <Header
+        title="Emergency Care"
+        right={
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text className="text-white font-medium">Cancel</Text>
           </TouchableOpacity>
-          <Text className="text-xl text-white font-bold ml-4">
-            {editingItem ? "Edit" : "Add"} Emergency Care
-          </Text>
-        </View>
+        }
+        onBackPress={onClose}
+      />
 
-        <View className="px-6 py-8">
-          <Text
-            className="text-lg font-medium mb-3"
-            style={{ color: palette.heading }}
-          >
-            {editingItem ? "Edit" : "Add"} Emergency Care
-          </Text>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        className="bg-white"
+        behavior={"padding"}
+      >
+        <ScrollView
+          className="px-5 pt-5 flex-1"
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
 
-          <Text className="text-sm mb-1 text-gray-600">
-            Emergency Care Name
-          </Text>
-          <TextInput
-            className="border border-gray-300 rounded-lg p-3 mb-4"
-            placeholder="Enter condition name"
+          <IconLabelHeading
+            icon={require("@/assets/images/allergies.png")}
+            label={editingItem ? "Update emergency care" : "Add emergency care"}
+          />
+         
+
+
+ <CustomFormInput
+            className="mb-2"
+            label="Emergency care name"
             value={topic}
             onChangeText={setName}
+            placeholder="Enter condition name"
           />
+          
 
-          <Text className="text-sm mb-1 text-gray-600">
-            Emergency Care Details
+<Text className="text-black mb-2 text-base">
+            Emergency care details
           </Text>
-          <TextInput
-            className="border border-gray-300 rounded-lg p-3 mb-4"
-            placeholder="Enter guidance steps"
-            value={details}
-            onChangeText={setDetails}
-            multiline
-            numberOfLines={4}
-            textAlignVertical="top"
-          />
-
-          <TouchableOpacity
-            className={`py-3 rounded-lg ${isSaveDisabled ? "opacity-50" : ""}`}
-            disabled={isSaveDisabled}
-            style={{ backgroundColor: palette.primary }}
-            onPress={handleSave}
+          <Textarea
+            size="md"
+            isReadOnly={false}
+            isInvalid={false}
+            isDisabled={false}
+            className="w-full"
           >
-            <Text className="text-white font-bold text-center">Save</Text>
-          </TouchableOpacity>
+            <TextareaInput
+              placeholder="Enter guidance steps"
+              style={{ textAlignVertical: "top", fontSize: 16 }}
+              value={details}
+              onChangeText={setDetails}
+            />
+          </Textarea>
+          
+        </ScrollView>
+
+        <View className="p-5">
+          <CustomButton
+            title={editingItem ? "Update" : "Add"}
+            onPress={handleSave}
+            disabled={isSaveDisabled}
+          />
         </View>
-      </SafeAreaView>
-    </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
