@@ -22,7 +22,7 @@ import { logger } from "react-native-reanimated/lib/typescript/logger";
 import palette from "@/utils/theme/color";
 import { black, white } from "tailwindcss/colors";
 
-export default function DateBasedInsightScreen() {
+export default function InsightScreen() {
   const { patient } = useContext(PatientContext);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,16 +93,7 @@ export default function DateBasedInsightScreen() {
       value: point.value,
       label: point.label,
     }));
-    //     const chartData = series.data.map((point: any) => {
-    //   let label = point.label;
-    //   if (label && label.includes(" ")) {
-    //     label = label.replace(" ", ""); // remove space between month and date
-    //   }
-    //   return {
-    //     value: point.value,
-    //     label,
-    //   };
-    // });
+  
 const maxY = Math.ceil(Math.max(...chartData.map((d:any) => d.value)) / 10) * 10;
 
     return (
@@ -208,17 +199,13 @@ const maxY = Math.ceil(Math.max(...chartData.map((d:any) => d.value)) / 10) * 10
         right={
           <TouchableOpacity
             onPress={() => router.back()}
-            className="px-3 py-2"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Text className="text-white font-medium">Cancel</Text>
           </TouchableOpacity>
         }
       />
 
-      <View className="px-2">
-        <Divider className="bg-gray-300" />
-      </View>
+     
 
       {/* ✅ Calendar */}
       <View className="overflow-hidden">
