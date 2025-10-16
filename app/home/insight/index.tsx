@@ -18,23 +18,21 @@ import insightsConfig from "@/services/config/insights.json";
 import { router } from "expo-router";
 import { Divider } from "@/components/ui/divider";
 import { getAllDateBasedInsights } from "@/services/core/InsightsService";
+import { logger } from "react-native-reanimated/lib/typescript/logger";
+import palette from "@/utils/theme/color";
+import { black, white } from "tailwindcss/colors";
 
 export default function DateBasedInsightScreen() {
   const { patient } = useContext(PatientContext);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [allInsightsData, setAllInsightsData] = useState<any[]>([]);
-
   const [selectedDate, setSelectedDate] = useState(moment());
 
-  const formatDate = (date: moment.Moment): string => {
-    return date.format("MM-DD-YYYY");
-  };
+  const formatDate = (date: moment.Moment): string => date.format("MM-DD-YYYY");
 
   useEffect(() => {
-    if (patient?.id) {
-      fetchAllInsights();
-    }
+    if (patient?.id) fetchAllInsights();
   }, [selectedDate, patient?.id]);
 
   const fetchAllInsights = async () => {
@@ -53,15 +51,13 @@ export default function DateBasedInsightScreen() {
         formattedDate
       );
 
-      console.debug("All insights data:", JSON.stringify(allData, null, 2));
-
       const enhancedData = allData.map((insight: any) => {
         const config = insightsConfig.find(
           (cfg) => cfg.insightKey === insight.insightKey
         );
         return {
           ...insight,
-          insightName: config?.insightName || "Unknown Insight",
+          insightName: config?.insightName || "Insight",
         };
       });
 
@@ -74,10 +70,13 @@ export default function DateBasedInsightScreen() {
     }
   };
 
-  const renderChart = (series: any, insightName: string) => {
+  const renderChart = (series: any, insightName: string, index: number) => {
     if (!series?.data?.length) {
       return (
-        <View key={`${series?.topic || "no-data"}`} className="mb-4">
+        <View
+          key={`${insightName}-${series?.topic || "no-data"}-${index}`}
+          className="mb-2 "
+        >
           <Text className="text-lg font-bold mb-2 text-gray-800">
             {insightName}: {series?.topic || "No Data"}
           </Text>
@@ -94,34 +93,116 @@ export default function DateBasedInsightScreen() {
       value: point.value,
       label: point.label,
     }));
+    //     const chartData = series.data.map((point: any) => {
+    //   let label = point.label;
+    //   if (label && label.includes(" ")) {
+    //     label = label.replace(" ", ""); // remove space between month and date
+    //   }
+    //   return {
+    //     value: point.value,
+    //     label,
+    //   };
+    // });
+const maxY = Math.ceil(Math.max(...chartData.map((d:any) => d.value)) / 10) * 10;
 
     return (
-      <View key={`${series.topic}`} className="mb-4">
-        <Text className="text-lg font-bold mb-2">{series.topic}</Text>
-        <LineChart
-          data={chartData}
-          height={220}
-          width={Dimensions.get("window").width - 32}
-          color1="#0077FF"
-          thickness={3}
-          noOfSections={4}
-          areaChart
-          hideDataPoints={false}
-          startFillColor={"rgba(0,119,255,0.3)"}
-          endFillColor={"rgba(0,119,255,0.05)"}
-          startOpacity={1}
-          endOpacity={0.3}
-          yAxisTextStyle={{ color: "#777" }}
-          xAxisLabelTextStyle={{ color: "#777", fontSize: 12 }}
-          rulesType="solid"
-          rulesColor="rgba(0,0,0,0.1)"
-        />
-      </View>
+      <View
+  key={`${insightName}-${series.topic || "topic"}-${index}`}
+  className="mb-4 bg-white p-3 rounded-lg shadow-sm"
+>
+  <Text className="text-lg font-semibold mb-2 text-gray-800">
+    {series.topic}
+  </Text>
+  <LineChart
+    areaChart
+    data={chartData}
+    height={160}
+    rotateLabel
+    width={300}
+    spacing={60}
+    
+    color={palette.primary}
+    thickness={2}
+    //  maxValue={10}
+    hideDataPoints={false}
+    startFillColor={palette.primary}
+    endFillColor={palette.fill}
+    startOpacity={0.9}
+    endOpacity={0.2}
+    initialSpacing={15}
+    noOfSections={4}
+    yAxisColor="transparent"
+    yAxisThickness={0}
+    rulesType="solid"
+    rulesColor="lightgray"
+    yAxisTextStyle={{ color: black }}
+    // yAxisSide="right"
+    xAxisColor="lightgray"
+    xAxisLabelTextStyle={{ color: black, fontSize: 11 }}
+    pointerConfig={{
+      pointerStripHeight: 140,
+      pointerStripColor: palette.gray300,
+      pointerStripWidth: 2,
+      pointerColor: palette.secondary,
+      radius: 5,
+      pointerLabelWidth: 100,
+      pointerLabelHeight: 90,
+      activatePointersOnLongPress: true,
+      autoAdjustPointerLabelPosition: false,
+      pointerLabelComponent: (items:any) => {
+        return (
+          <View
+            style={{
+              
+              height: 90,
+              width: 50,
+              justifyContent: "center",
+              // marginTop: -30,
+              marginLeft: -15,
+            }}
+          >
+            <Text
+              style={{
+                color: palette.secondary,
+                fontSize: 13,
+                fontWeight: "700",
+                marginBottom: 6,
+                textAlign: "center",
+              }}
+            >
+              {items[0].label}
+            </Text>
+
+            <View
+              style={{
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 12,
+                backgroundColor: palette.primary,
+              }}
+            >
+              <Text
+                style={{
+                  fontWeight: "bold",
+                  textAlign: "center",
+                  color: white,
+                }}
+              >
+                {items[0].value}
+              </Text>
+            </View>
+          </View>
+        );
+      },
+    }}
+  />
+</View>
+
     );
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView edges={["right", "top", "left"]} className="flex-1 bg-white">
       <Header
         title="Insights"
         right={
@@ -139,53 +220,38 @@ export default function DateBasedInsightScreen() {
         <Divider className="bg-gray-300" />
       </View>
 
-      {/* ✅ Calendar Section */}
-        <View className=" overflow-hidden ">
-          <TrackCalendar
-            selectedDate={selectedDate}
-            onDateSelected={(date) => setSelectedDate(date)}
-          />
-        </View>
+      {/* ✅ Calendar */}
+      <View className="overflow-hidden">
+        <TrackCalendar
+          selectedDate={selectedDate}
+          onDateSelected={(date) => setSelectedDate(date)}
+        />
+      </View>
 
-      {/* Error */}
       {error && (
         <View className="mb-4 p-3 mx-4 bg-red-100 rounded-lg">
           <Text className="text-red-700 text-center">{error}</Text>
         </View>
       )}
 
-      {/* Loading */}
       {loading && (
         <View className="items-center justify-center py-4">
           <Spinner size="large" />
         </View>
       )}
 
-      {/* Insights */}
       <ScrollView
         className="flex-1 bg-white"
         contentContainerStyle={{ padding: 16, paddingBottom: 48 }}
       >
         {allInsightsData && allInsightsData.length > 0 ? (
           <View className="mt-2">
-            {allInsightsData.map((insightData: any) => (
-              <View
-                key={`${insightData.insightKey}-${selectedDate.toISOString()}`}
-                className="mb-6 p-3 bg-gray-50 rounded-lg shadow-sm"
-              >
-                <Text className="text-base font-semibold mb-3 text-gray-800">
-                  {insightData.insightName}
-                </Text>
-
+            {allInsightsData.map((insightData: any, idx: number) => (
+              <View key={`${insightData.insightKey || "insight"}-${idx}`}>
                 {insightData.series && insightData.series.length > 0 ? (
-                  insightData.series.map((series: any) => (
-                    <View
-                      key={`${insightData.insightKey}-${series.topic}`}
-                      className="mb-4"
-                    >
-                      {renderChart(series, insightData.insightName)}
-                    </View>
-                  ))
+                  insightData.series.map((series: any, i: number) =>
+                    renderChart(series, insightData.insightName, i)
+                  )
                 ) : (
                   <View className="p-4 bg-gray-100 rounded-lg">
                     <Text className="text-gray-600">
@@ -209,4 +275,3 @@ export default function DateBasedInsightScreen() {
     </SafeAreaView>
   );
 }
- 
