@@ -23,6 +23,7 @@ type FormInputProps = {
   isDisabled?: boolean;
   isRequired?: boolean;
   size?: "sm" | "md" | "lg" | "xl";
+  className?: string;
 };
 
 export function CustomFormInput({
@@ -37,16 +38,17 @@ export function CustomFormInput({
   isDisabled = false,
   isRequired = false,
   size = "xl",
+  className,
 }: FormInputProps) {
   return (
     <FormControl
-      className="mb-4"
+      className={className || "mb-4"}
       isInvalid={!!error}
       isDisabled={isDisabled}
       isRequired={isRequired}
     >
       <FormControlLabel>
-        <FormControlLabelText>{label}</FormControlLabelText>
+        <FormControlLabelText className=" font-normal">{label}</FormControlLabelText>
       </FormControlLabel>
 
       <Input className="bg-white rounded-lg" size={size} variant="outline">
@@ -57,6 +59,7 @@ export function CustomFormInput({
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
           placeholder={placeholder}
+          style={{ fontSize: 16 }}
         />
       </Input>
 

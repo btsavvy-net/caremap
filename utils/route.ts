@@ -1,3 +1,5 @@
+import More from "@/app/home/more";
+
 export const ROUTE_PREFIX = {
   PUBLIC: "/public",
   AUTH: "/auth",
@@ -6,9 +8,12 @@ export const ROUTE_PREFIX = {
   MEDICAL_OVERVIEW: "/home/myHealth/medicalOverview",
   MEDICAL_HISTORY: "/home/myHealth/medicalHistory" as const,
   TRACK: "/home/track" as const,
+  More: "/home/more" as const,
 } as const;
 
 export const ROUTES = {
+    MORE: `${ROUTE_PREFIX.More}` as const,
+
   LAUNCH: `${ROUTE_PREFIX.PUBLIC}/launch` as const,
   ONBOARDING: `${ROUTE_PREFIX.PUBLIC}/onboarding` as const,
   LOGIN: `${ROUTE_PREFIX.AUTH}/login` as const,
@@ -23,6 +28,9 @@ export const ROUTES = {
   EMERGENCY_CARE: `${ROUTE_PREFIX.MY_HEALTH}/emergencyCare` as const,
   MEDICATIONS: `${ROUTE_PREFIX.MY_HEALTH}/medications` as const,
   NOTES: `${ROUTE_PREFIX.MY_HEALTH}/notes` as const,
+  // ALLERGIES: `${ROUTE_PREFIX.MY_HEALTH}/allergies` as const,
+  // MEDICAL_EQUIPMENTS: `${ROUTE_PREFIX.MY_HEALTH}/medicalEquipments` as const,
+  // HIGH_LEVEL_GOALS: `${ROUTE_PREFIX.MY_HEALTH}/highLevelGoals` as const,
   ALLERGIES: `${ROUTE_PREFIX.MY_HEALTH}/allergies` as const,
   MEDICAL_EQUIPMENTS: `${ROUTE_PREFIX.MY_HEALTH}/medicalEquipments` as const,
   HIGH_LEVEL_GOALS: `${ROUTE_PREFIX.MY_HEALTH}/highLevelGoals` as const,

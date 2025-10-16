@@ -446,7 +446,11 @@ export default function CustomGoals() {
                 : "border-gray-400"
             }`}
           >
-            <Text className="text-cyan-600 font-semibold">+ Add Question</Text>
+            <Text 
+            style={{
+                            color: palette.primary,
+                          }}
+                           className=" font-semibold">+ Add Question</Text>
           </TouchableOpacity>
  
           <CustomButton
