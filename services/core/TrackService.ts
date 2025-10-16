@@ -466,18 +466,25 @@ export const generateSummary = (template: string, answer: string): string | null
     if (!template || !answer) return null;
 
     try {
+        // Optimized: Check if answer is already a string and doesn't need parsing
         let parsed: any;
-        try {
-            parsed = JSON.parse(answer);
-        } catch {
+        if (typeof answer === 'string' && (answer.startsWith('[') || answer.startsWith('{'))) {
+            try {
+                parsed = JSON.parse(answer);
+            } catch {
+                parsed = answer;
+            }
+        } else {
             parsed = answer;
         }
 
-        if (Array.isArray(parsed)) {
-            return template.replace('{{answer}}', parsed.join(', '));
-        }
-        logger.debug(`${template.replace('{{answer}}', String(parsed))}`);
-        return template.replace('{{answer}}', String(parsed));
+        // Optimized: Handle array case more efficiently
+        const result = Array.isArray(parsed) 
+            ? template.replace('{{answer}}', parsed.join(', '))
+            : template.replace('{{answer}}', String(parsed));
+            
+        logger.debug(result);
+        return result;
     } catch {
         return null;
     }
@@ -485,24 +492,104 @@ export const generateSummary = (template: string, answer: string): string | null
 
 export const getSummariesForItem = async (entryId: number): Promise<string[]> => {
     return useModel(questionModel, async (qModel) => {
-        const rows = await qModel.runQuery(
+        // Optimized: Single query to get all required data in one go
+        const mainQuery = await qModel.runQuery(
             `
-      SELECT q.summary_template, r.answer
-      FROM ${tables.QUESTION} q
-      LEFT JOIN ${tables.TRACK_RESPONSE} r
-        ON q.id = r.question_id AND r.track_item_entry_id = ?
-      WHERE q.item_id = (SELECT item_id FROM ${tables.TRACK_ITEM_ENTRY} WHERE id = ?)
-      `,
+            SELECT 
+                q.*,
+                tc.name as category_name,
+                r.answer,
+                r.updated_date as response_updated_date
+            FROM ${tables.QUESTION} q
+            INNER JOIN ${tables.TRACK_ITEM_ENTRY} tie ON tie.track_item_id = q.item_id AND tie.id = ?
+            INNER JOIN ${tables.TRACK_ITEM} ti ON ti.id = q.item_id
+            INNER JOIN ${tables.TRACK_CATEGORY} tc ON tc.id = ti.category_id
+            LEFT JOIN ${tables.TRACK_RESPONSE} r ON r.question_id = q.id AND r.track_item_entry_id = ?
+            WHERE q.status = 'active'
+            ORDER BY q.id
+            `,
             [entryId, entryId]
-        );
+        ) as Array<Question & { category_name: string; answer?: string; response_updated_date?: string }>;
 
-        return rows
-            .map((row: { summary_template: string; answer: string; }) =>
-                row.summary_template && row.answer
-                    ? generateSummary(row.summary_template, row.answer)
-                    : null
-            )
-            .filter((s: any): s is string => !!s);
+        if (mainQuery.length === 0) return [];
+
+        const isCustom = mainQuery[0].category_name === 'Custom';
+        const allQuestions = mainQuery.map(row => ({
+            id: row.id,
+            item_id: row.item_id,
+            code: row.code,
+            text: row.text,
+            type: row.type,
+            required: row.required,
+            summary_template: row.summary_template,
+            status: row.status,
+            created_date: row.created_date,
+            updated_date: row.updated_date,
+            instructions: row.instructions,
+            subtype: row.subtype,
+            units: row.units,
+            min: row.min,
+            max: row.max,
+            precision: row.precision,
+            parent_question_id: row.parent_question_id,
+            display_condition: row.display_condition
+        })) as Question[];
+
+        // Optimized: Get options only for questions that have responses (early filtering)
+        const questionsWithAnswers = mainQuery.filter(row => 
+            row.answer !== undefined && row.answer !== null
+        );
+        
+        if (questionsWithAnswers.length === 0) return [];
+
+        const questionIds = [...new Set(allQuestions.map(q => q.id))]; // Remove duplicates
+        const allOptions = questionIds.length > 0 ? await useModel(responseOptionModel, async (optModel: any) => {
+            const result = await optModel.runQuery(
+                `
+                SELECT * FROM ${tables.RESPONSE_OPTION}
+                WHERE question_id IN (${questionIds.map(() => '?').join(',')})
+                  AND status = 'active'
+                `,
+                questionIds
+            );
+            return result as ResponseOption[];
+        }) : [];
+
+        // Optimized: Build answer map from main query results
+        const answerMap: Record<number, any> = {};
+        let lastUpdatedDate: Date | null = null;
+        
+        for (const row of questionsWithAnswers) {
+            answerMap[row.id] = row.answer;
+            // Track the most recent update date while building the map
+            if (row.response_updated_date) {
+                const updateDate = new Date(row.response_updated_date);
+                if (!lastUpdatedDate || updateDate > lastUpdatedDate) {
+                    lastUpdatedDate = updateDate;
+                }
+            }
+        }
+
+        // For custom goals, return early with just the updated date
+        if (isCustom && lastUpdatedDate) {
+            return [`Last updated: ${formatMMDDYYYY(lastUpdatedDate)}`];
+        }
+
+        // Optimized: Filter and generate summaries in one pass with visibility cache
+        const summaries: string[] = [];
+        const visibilityCache = new Map<number, boolean>();
+        
+        for (const question of allQuestions) {
+            const answer = answerMap[question.id];
+            if (!answer || !question.summary_template) continue;
+            
+            if (isQuestionVisible(question, answerMap, allQuestions, allOptions, visibilityCache)) {
+                const summary = generateSummary(question.summary_template, answer);
+                if (summary) summaries.push(summary);
+            }
+        }
+        
+        return summaries;
     });
 };
 
@@ -519,34 +606,61 @@ export const isQuestionVisible = (
     q: Question,
     answers: Record<number, any>,
     allQuestions?: Question[],
-    allOptions?: ResponseOption[]
+    allOptions?: ResponseOption[],
+    visibilityCache?: Map<number, boolean>
 ): boolean => {
-    if (!q.parent_question_id || !q.display_condition) return true;
+    // Use cache to avoid redundant calculations
+    if (visibilityCache?.has(q.id)) {
+        return visibilityCache.get(q.id)!;
+    }
 
+    if (!q.parent_question_id || !q.display_condition) {
+        visibilityCache?.set(q.id, true);
+        return true;
+    }
+
+    // First, check if the parent question itself is visible (cascading visibility)
+    const parentQuestion = allQuestions?.find(question => question.id === q.parent_question_id);
+    if (parentQuestion && !isQuestionVisible(parentQuestion, answers, allQuestions, allOptions, visibilityCache)) {
+        visibilityCache?.set(q.id, false);
+        return false;
+    }
+
+    let result = true;
     try {
         const cond = JSON.parse(q.display_condition);
         const parentAnswer = answers[q.parent_question_id];
+        
+        // Optimized: Parse answer once and handle undefined/null early
         let parsedParentAnswer: any;
-
-        try {
-            parsedParentAnswer = JSON.parse(parentAnswer);
-        } catch {
+        if (parentAnswer === undefined || parentAnswer === null) {
             parsedParentAnswer = parentAnswer;
+        } else {
+            try {
+                parsedParentAnswer = JSON.parse(parentAnswer);
+            } catch {
+                parsedParentAnswer = parentAnswer;
+            }
         }
 
         // Handle parent_answered condition using enum
         if (cond[QuestionCondition.PARENT_RES_EXISTS] === true) {
-            return (
-
+            result = (
                 parsedParentAnswer !== undefined &&
                 parsedParentAnswer !== null &&
                 parsedParentAnswer !== "" &&
                 (!Array.isArray(parsedParentAnswer) || parsedParentAnswer.length > 0)
             );
+            visibilityCache?.set(q.id, result);
+            return result;
         }
 
-        // Find parent question to determine its type
-        const parentQuestion = allQuestions?.find(question => question.id === q.parent_question_id);
+        // Optimized: Early return if no parent answer for other conditions
+        if (parsedParentAnswer === undefined || parsedParentAnswer === null) {
+            visibilityCache?.set(q.id, false);
+            return false;
+        }
+
         const parentQuestionType = parentQuestion?.type;
 
         // Map text values to option codes for boolean, multi-choice, and multi-select questions
@@ -556,17 +670,15 @@ export const isQuestionVisible = (
                 parentQuestionType === QuestionType.MSQ) &&
             allOptions?.length) {
 
-            // Get options for the parent question
+            // Optimized: Filter options once
             const parentOptions = allOptions.filter(opt => opt.question_id === q.parent_question_id);
 
-            // Map text values to option codes
             if (Array.isArray(parsedParentAnswer)) {
                 // Handle multi-select case
-                const mappedAnswers = parsedParentAnswer.map(answer => {
+                parsedParentAnswer = parsedParentAnswer.map(answer => {
                     const matchingOption = parentOptions.find(opt => opt.text === answer);
                     return matchingOption ? matchingOption.code : answer;
                 });
-                parsedParentAnswer = mappedAnswers;
             } else if (typeof parsedParentAnswer === 'string') {
                 // Handle boolean and multi-choice case
                 const matchingOption = parentOptions.find(opt => opt.text === parsedParentAnswer);
@@ -578,40 +690,42 @@ export const isQuestionVisible = (
 
         const numericAnswer = Number(parsedParentAnswer);
 
-        // Operator checks using enum - now supporting option codes
-        const operators: [QuestionCondition, (value: any) => boolean][] = [
-            [QuestionCondition.EQ, (v) => Array.isArray(parsedParentAnswer) ? parsedParentAnswer.includes(v) : parsedParentAnswer === v],
-            [QuestionCondition.NOT_EQ, (v) => Array.isArray(parsedParentAnswer) ? !parsedParentAnswer.includes(v) : parsedParentAnswer !== v],
-            [QuestionCondition.GT, (v) => !isNaN(numericAnswer) && numericAnswer > Number(v)],
-            [QuestionCondition.GTE, (v) => !isNaN(numericAnswer) && numericAnswer >= Number(v)],
-            [QuestionCondition.LT, (v) => !isNaN(numericAnswer) && numericAnswer < Number(v)],
-            [QuestionCondition.LTE, (v) => !isNaN(numericAnswer) && numericAnswer <= Number(v)],
-            [
-                QuestionCondition.IN,
-                (v) => Array.isArray(v) && (Array.isArray(parsedParentAnswer) ?
-                    v.some(val => parsedParentAnswer.includes(val)) :
-                    v.includes(parsedParentAnswer)),
-            ],
-            [
-                QuestionCondition.NOT_IN,
-                (v) => Array.isArray(v) && (Array.isArray(parsedParentAnswer) ?
-                    !v.some(val => parsedParentAnswer.includes(val)) :
-                    !v.includes(parsedParentAnswer)),
-            ],
-        ];
-
-        for (const [key, check] of operators) {
-            if (cond[key] !== undefined) {
-                return check(cond[key]);
-            }
+        // Optimized: Direct condition checks instead of array iteration
+        if (cond[QuestionCondition.EQ] !== undefined) {
+            result = Array.isArray(parsedParentAnswer) 
+                ? parsedParentAnswer.includes(cond[QuestionCondition.EQ]) 
+                : parsedParentAnswer === cond[QuestionCondition.EQ];
+        } else if (cond[QuestionCondition.NOT_EQ] !== undefined) {
+            result = Array.isArray(parsedParentAnswer) 
+                ? !parsedParentAnswer.includes(cond[QuestionCondition.NOT_EQ]) 
+                : parsedParentAnswer !== cond[QuestionCondition.NOT_EQ];
+        } else if (cond[QuestionCondition.GT] !== undefined) {
+            result = !isNaN(numericAnswer) && numericAnswer > Number(cond[QuestionCondition.GT]);
+        } else if (cond[QuestionCondition.GTE] !== undefined) {
+            result = !isNaN(numericAnswer) && numericAnswer >= Number(cond[QuestionCondition.GTE]);
+        } else if (cond[QuestionCondition.LT] !== undefined) {
+            result = !isNaN(numericAnswer) && numericAnswer < Number(cond[QuestionCondition.LT]);
+        } else if (cond[QuestionCondition.LTE] !== undefined) {
+            result = !isNaN(numericAnswer) && numericAnswer <= Number(cond[QuestionCondition.LTE]);
+        } else if (cond[QuestionCondition.IN] !== undefined) {
+            const values = cond[QuestionCondition.IN];
+            result = Array.isArray(values) && (Array.isArray(parsedParentAnswer) ?
+                values.some(val => parsedParentAnswer.includes(val)) :
+                values.includes(parsedParentAnswer));
+        } else if (cond[QuestionCondition.NOT_IN] !== undefined) {
+            const values = cond[QuestionCondition.NOT_IN];
+            result = Array.isArray(values) && (Array.isArray(parsedParentAnswer) ?
+                !values.some(val => parsedParentAnswer.includes(val)) :
+                !values.includes(parsedParentAnswer));
         }
 
-        // No known condition matched → default visible
-        return true;
     } catch (err) {
         console.warn("Invalid display_condition JSON:", q.display_condition, err);
-        return true;
+        result = true;
     }
+
+    visibilityCache?.set(q.id, result);
+    return result;
 };
 
 /*
