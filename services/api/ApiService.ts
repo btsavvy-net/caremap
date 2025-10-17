@@ -48,7 +48,7 @@ export const retry = async <T>(
 
             const { status, message = "Unknown error", isHardFailure } = err || {};
 
-            const isRetryable = (status || status === 429 || status >= 500) && !isHardFailure;
+            const isRetryable = (!status || status === 429 || status >= 500) && !isHardFailure;
             const attemptMsg = `Attempt ${attempt}/${retries} failed (status=${status ?? "n/a"})`;
 
             if (isRetryable && attempt < retries) {
