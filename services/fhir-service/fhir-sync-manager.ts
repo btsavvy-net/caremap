@@ -1,6 +1,7 @@
 import { useModel } from "@/services/database/BaseModel";
-import { Patient } from "@/services/database/migrations/v1/schema_v1";
+import { Patient as DbPatient } from "@/services/database/migrations/v1/schema_v1";
 import { SyncPatientDataModel } from "@/services/database/models/SyncPatientDataModel";
+import { handleBackgroundFhirSync } from "@/services/fhir-service/fhir-sync-service";
 import { logger } from "@/services/logging/logger";
 import { FHIR_SYNC_FREQ } from "@/utils/config";
 
@@ -26,6 +27,7 @@ export const updateSyncStatus = async (
     status: boolean
 ): Promise<void> => {
     const syncPatientDataModel = new SyncPatientDataModel();
+    
     await useModel(syncPatientDataModel, async (model) => {
         const existing = await model.getFirstByFields({ patient_fhir_id: patientFhirId });
         if (existing) {
@@ -49,7 +51,7 @@ export const updateSyncStatus = async (
 };
 
 
-export const startFhirSync = (patient: Patient) => {
+export const startFhirSync = (patient: DbPatient) => {
     const scheduleSync = async () => {
         try {
             const should = await shouldSync(patient.fhir_id);
@@ -70,9 +72,4 @@ export const startFhirSync = (patient: Patient) => {
 };
 
 
-export const handleBackgroundFhirSync = async (patient: Patient) => {
-    if (!patient) {
-        throw new Error("Patient not found");
-    }
-    logger.debug(`Syncing FHIR Data`);
-};
+

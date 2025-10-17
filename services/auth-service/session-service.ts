@@ -27,7 +27,7 @@ export async function syncPatientSession(user: User): Promise<Patient> {
 
     // Pull FHIR Patient Data
     const fhirPatientData = await FhirService.getPatient(PATIENT_FHIR_ID.toString());
-    console.log("FHIR Patient: ", JSON.stringify(fhirPatientData));
+    if (!fhirPatientData) throw new Error("Patient Not Found !!");
     fhirPatientData.user_id = user.id;
     fhirPatientData.fhir_id = PATIENT_FHIR_ID.toString();
 
