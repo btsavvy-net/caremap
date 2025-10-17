@@ -1,31 +1,38 @@
-import ActionPopover from "@/components/shared/ActionPopover";
-import { CustomAlertDialog } from "@/components/shared/CustomAlertDialog";
-import Header from "@/components/shared/Header";
-import { useCustomToast } from "@/components/shared/useCustomToast";
-import { CalendarDaysIcon, Icon } from "@/components/ui/icon";
-import { Textarea, TextareaInput } from "@/components/ui/textarea";
-import { PatientContext } from "@/context/PatientContext";
-import {
-  createPatientNote,
-  deletePatientNote,
-  getPatientNotesByPatientId,
-  updatePatientNote,
-} from "@/services/core/PatientNoteService";
-import { PatientNote } from "@/services/database/migrations/v1/schema_v1";
-import { logger } from "@/services/logging/logger";
-import palette from "@/utils/theme/color";
 import React, { useContext, useEffect, useState } from "react";
 import {
-  FlatList,
-  Keyboard,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
   View,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from "react-native";
-import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Textarea, TextareaInput } from "@/components/ui/textarea";
+import palette from "@/utils/theme/color";
+import {
+  createPatientNote,
+  getPatientNotesByPatientId,
+  updatePatientNote,
+  deletePatientNote,
+} from "@/services/core/PatientNoteService";
+import { PatientContext } from "@/context/PatientContext";
+import { CustomAlertDialog } from "@/components/shared/CustomAlertDialog";
+import Header from "@/components/shared/Header";
+import ActionPopover from "@/components/shared/ActionPopover";
+import { useCustomToast } from "@/components/shared/useCustomToast";
+import { PatientNote } from "@/services/database/migrations/v1/schema_v1";
+import DateTimePickerModal from "react-native-modal-datetime-picker";
+import { Icon } from "@/components/ui/icon";
+import { router } from "expo-router";
+import { logger } from "@/services/logging/logger";
+import { Divider } from "@/components/ui/divider";
+import { CustomButton } from "@/components/shared/CustomButton";
+import IconLabelHeading from "@/components/shared/IconLabelHeading";
+import { CustomFormInput } from "@/components/shared/CustomFormInput";
+import { Calendar } from "lucide-react-native";
 
 export default function Notes() {
   const { patient } = useContext(PatientContext);
@@ -49,9 +56,10 @@ export default function Notes() {
     }
     try {
       const notes = await getPatientNotesByPatientId(patient.id);
+      console.log(notes);
       setPatientNotes(notes);
     } catch (e) {
-      logger.debug(`${e}`);
+      logger.debug(String(e));
     }
   }
 
@@ -113,28 +121,30 @@ export default function Notes() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView edges={["right", "top", "left"]} className="flex-1 bg-white">
       {/* Header */}
-      <Header title="Notes" />
+      <Header
+        title="Notes"
+        right={
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text className="text-white font-medium">Cancel</Text>
+          </TouchableOpacity>
+        }
+      />
 
-      <View className="px-6 pt-8 flex-1">
+      <View className="px-5 pt-5 flex-1">
         {/* Heading*/}
-        <View>
-          <Text
-            className="text-lg font-semibold"
-            style={{ color: palette.heading }}
-          >
-            Enter any notes or questions regarding your care
-          </Text>
+        <View className="flex-1">
+          <IconLabelHeading
+            icon={require("@/assets/images/notes.png")}
+            label="Enter notes/questions regarding your care"
+            subtitle="You can add multiple notes"
+            count={patientNotes.length}
+          />
 
-          {/* hr */}
-          <View className="h-px bg-gray-300 my-3" />
+          {/* <Divider className="bg-gray-300 mb-3" /> */}
 
-          <View className="flex-row justify-between mb-2 px-2">
-            <Text className="text-gray-500">Topic</Text>
-            <Text className="text-gray-500">Reminder Date</Text>
-          </View>
-          <View>
+          <View className="flex-1">
             <FlatList
               data={patientNotes}
               keyExtractor={(item) => item.id.toString()}
@@ -145,12 +155,12 @@ export default function Notes() {
                   <View className="border border-gray-300 rounded-lg mb-3 px-3 py-3">
                     <View className="flex-row items-center justify-between">
                       <View className="flex-row items-center space-x-2">
-                        <Text className="text-lg ml-3 max-w-[220px] text-left">
+                        <Text className="text-lg font-semibold ml-3 max-w-[220px] text-left">
                           {item.topic}
                         </Text>
                       </View>
                       <View className="flex-row">
-                        <Text className="text-lg text-gray-500 mr-3">
+                        <Text className="text-lg mr-3">
                           {item.reminder_date
                             ? new Date(item.reminder_date)
                                 .toLocaleDateString("en-US", {
@@ -184,24 +194,21 @@ export default function Notes() {
                 );
               }}
               ListEmptyComponent={
-                <Text className="text-gray-500">No notes found.</Text>
+                <Text className="text-gray-500 text-lg">No notes found.</Text>
               }
-              style={{ minHeight: 50, maxHeight: 250 }}
+              style={{ minHeight: 50 }}
             />
           </View>
         </View>
 
-        {/* hr */}
-        <View className="h-px bg-gray-300 mb-2" />
-
+        <Divider className="bg-gray-300 mb-2" />
         {/* Add note Button */}
-        <TouchableOpacity
-          className="rounded-md py-3 items-center mt-1"
-          onPress={() => setShowAddForm(true)}
-          style={{ backgroundColor: palette.primary }}
-        >
-          <Text className="text-white font-medium text-lg">Add Notes</Text>
-        </TouchableOpacity>
+        <View className="py-5">
+          <CustomButton
+            title="Add Notes"
+            onPress={() => setShowAddForm(true)}
+          />
+        </View>
       </View>
 
       <CustomAlertDialog
@@ -260,64 +267,70 @@ function AddNotesPage({
     setShowDatePicker(false);
   };
 
+  const isDisabled = noteTopic.trim().length === 0;
+
   const handleSave = () => {
-    if (noteTopic.trim()) {
-      handleAddUpdateNote({
-        ...(editingCondition?.id ? { id: editingCondition.id } : {}),
-        topic: noteTopic.trim(),
-        details: noteDetails.trim(),
-        reminder_date: reminderDate ?? undefined,
-      } as PatientNote);
-    }
+    if (isDisabled) return;
+    handleAddUpdateNote({
+      ...(editingCondition?.id ? { id: editingCondition.id } : {}),
+      topic: noteTopic.trim(),
+      details: noteDetails.trim(),
+      reminder_date: reminderDate ?? undefined,
+    } as PatientNote);
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <SafeAreaView className="flex-1 bg-white">
-        {/* Header */}
-        <Header title="Notes" onBackPress={onClose} />
-
-        <View className="px-6 py-8">
-          <Text
-            className="text-lg font-medium mb-3"
-            style={{ color: palette.heading }}
-          >
-            {editingCondition ? "Update Notes" : "Add Notes"}
-          </Text>
+    <SafeAreaView edges={["right", "top", "left"]} className="flex-1 bg-white">
+      {/* Header */}
+      <Header
+        title="Notes"
+        right={
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text className="text-white font-medium">Cancel</Text>
+          </TouchableOpacity>
+        }
+      />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        className="bg-white"
+        // behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={"padding"}
+        // keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+      >
+        <ScrollView
+          className="px-5 pt-5 flex-1"
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <IconLabelHeading
+            icon={require("@/assets/images/notes.png")}
+            label={editingCondition ? "Update Notes" : "Add Notes"}
+            subtitle="Please provide the details below"
+          />
 
           {/* Enter Topic */}
-          <View className="mb-4">
-            <Text className="text-gray-600 text-sm mb-2">Enter Topic</Text>
-            <TextInput
-              value={noteTopic}
-              onChangeText={setNoteTopic}
-              placeholder="Please Enter your topic here"
-              className="border border-gray-300 rounded-md px-3 py-3 text-base"
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
-            />
-          </View>
+
+          <CustomFormInput
+            className="mb-2"
+            label="Enter Topic *"
+            value={noteTopic}
+            onChangeText={setNoteTopic}
+            placeholder="Please enter your topic here"
+          />
 
           {/* Reminder Date */}
           <View className="mb-4">
-            <Text className="text-gray-600 text-sm mb-2">Reminder Date</Text>
+            <Text className="text-gray-600 text-base mb-2">Reminder Date</Text>
             <TouchableOpacity
-              className="border border-gray-300 rounded-md px-3"
+              className="border border-gray-300 rounded-md px-3 py-3"
               onPress={() => setShowDatePicker(true)}
+              activeOpacity={0.7}
             >
               <View className="flex-row items-center">
-                <TextInput
-                  value={reminderDate ? formatDate(reminderDate) : ""}
-                  placeholder="MM-DD-YY"
-                  className="flex-1 text-base"
-                  editable={false}
-                  pointerEvents="none"
-                />
-                <Icon
-                  as={CalendarDaysIcon}
-                  className="text-typography-500 m-1 w-5 h-5"
-                />
+                <Text className="flex-1 text-base text-gray-800">
+                  {reminderDate ? formatDate(reminderDate) : "MM-DD-YY"}
+                </Text>
+                <Icon as={Calendar} className="text-gray-500 w-5 h-5" />
               </View>
             </TouchableOpacity>
             <DateTimePickerModal
@@ -330,7 +343,7 @@ function AddNotesPage({
           </View>
 
           {/* Details */}
-          <Text className="text-gray-500 mb-2 text-sm">Details</Text>
+          <Text className=" mb-2 text-base">Details</Text>
           <Textarea
             size="md"
             isReadOnly={false}
@@ -345,22 +358,19 @@ function AddNotesPage({
               onChangeText={setNoteDetails}
             />
           </Textarea>
-
-          {/* Save button */}
-          <TouchableOpacity
-            className="py-3 rounded-md mt-3"
-            style={{ backgroundColor: palette.primary }}
+        </ScrollView>
+        {/* Save button */}
+        <View className="p-5">
+          <CustomButton
+            title={editingCondition ? "Update" : "Save"}
             onPress={() => {
               handleSave();
               onClose(); // Go back to list
             }}
-          >
-            <Text className="text-white font-bold text-center">
-              {editingCondition ? "Update" : "Save"}
-            </Text>
-          </TouchableOpacity>
+            disabled={isDisabled}
+          />
         </View>
-      </SafeAreaView>
-    </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
