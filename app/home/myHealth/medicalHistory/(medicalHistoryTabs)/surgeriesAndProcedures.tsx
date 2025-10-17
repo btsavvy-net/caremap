@@ -1,34 +1,37 @@
-import ActionPopover from "@/components/shared/ActionPopover";
-import { CustomAlertDialog } from "@/components/shared/CustomAlertDialog";
-import Header from "@/components/shared/Header";
-import { useCustomToast } from "@/components/shared/useCustomToast";
-import { CalendarDaysIcon, Icon } from "@/components/ui/icon";
-import { Textarea, TextareaInput } from "@/components/ui/textarea";
-import { PatientContext } from "@/context/PatientContext";
-import {
-  createSurgeryProcedure,
-  deleteSurgeryProcedure,
-  getSurgeryProceduresByPatientId,
-  updateSurgeryProcedure,
-} from "@/services/core/SurgeryProcedureService";
-import { SurgeryProcedure } from "@/services/database/migrations/v1/schema_v1";
-import { logger } from "@/services/logging/logger";
-import palette from "@/utils/theme/color";
+
 import React, { useContext, useEffect, useState } from "react";
 import {
-  FlatList,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
   View,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  TextInput,
+  ScrollView,
 } from "react-native";
-import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Textarea, TextareaInput } from "@/components/ui/textarea";
+import palette from "@/utils/theme/color";
+import {
+  createSurgeryProcedure,
+  getSurgeryProceduresByPatientId,
+  updateSurgeryProcedure,
+  deleteSurgeryProcedure,
+} from "@/services/core/SurgeryProcedureService";
+import { PatientContext } from "@/context/PatientContext";
+import { CustomAlertDialog } from "@/components/shared/CustomAlertDialog";
+import Header from "@/components/shared/Header";
+import ActionPopover from "@/components/shared/ActionPopover";
+import { useCustomToast } from "@/components/shared/useCustomToast";
+import { SurgeryProcedure } from "@/services/database/migrations/v1/schema_v1";
+import DateTimePickerModal from "react-native-modal-datetime-picker";
+import { CalendarDaysIcon, Icon } from "@/components/ui/icon";
+import { KeyboardAvoidingView, Platform } from "react-native";
+import { logger } from "@/services/logging/logger";
+import { router } from "expo-router";
+import { CustomButton } from "@/components/shared/CustomButton";
+import { Divider } from "@/components/ui/divider";
+import { CustomFormInput } from "@/components/shared/CustomFormInput";
+import IconLabelHeading from "@/components/shared/IconLabelHeading";
 
 export default function SurgeriesProcedures() {
   const { patient } = useContext(PatientContext);
@@ -52,6 +55,7 @@ export default function SurgeriesProcedures() {
   async function fetchSurgeryProcedures() {
     if (!patient?.id) {
       logger.debug("No patient id found");
+      ("No patient id found");
       return;
     }
     try {
@@ -60,7 +64,7 @@ export default function SurgeriesProcedures() {
       );
       setPatientSurgeries(getSurgeryProcedures);
     } catch (e) {
-      logger.debug(`${e}`);
+      logger.debug(String(e));
     }
   }
 
@@ -128,22 +132,27 @@ export default function SurgeriesProcedures() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView edges={["right", "top", "left"]} className="flex-1 bg-white">
       {/* Header */}
-      <Header title="Surgeries / Procedures" />
+      <Header
+        title="Surgeries/Procedure"
+        right={
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text className="text-white font-medium">Cancel</Text>
+          </TouchableOpacity>
+        }
+      />
 
-      <View className="px-6 pt-8 flex-1">
+      <View className="px-5 pt-5 flex-1">
         <View className="flex-1">
-          {/* Heading*/}
-          <Text
-            className="text-lg font-semibold"
-            style={{ color: palette.heading }}
-          >
-            Past surgeries/procedures
-          </Text>
+          <IconLabelHeading
+            icon={require("@/assets/images/allergies.png")}
+            label="Past surgeries and procedures"
+            subtitle="Details of your past surgeries and procedures."
+            count={patientSurgeries.length}
+          />
 
-          {/* hr */}
-          <View className="h-px bg-gray-300 my-3" />
+          {/* <Divider className="bg-gray-300 my-3" /> */}
 
           <View className="flex-1">
             <FlatList
@@ -190,7 +199,7 @@ export default function SurgeriesProcedures() {
                           Procedure Name:
                         </Text>
                         <Text
-                          className="font-normal text-base leading-5 text-gray-600"
+                          className="font-normal text-base leading-5 text-gray-700"
                           style={{
                             flexShrink: 1,
                             // flexWrap: "wrap",
@@ -210,7 +219,7 @@ export default function SurgeriesProcedures() {
                             Facility:
                           </Text>
                           <Text
-                            className="font-normal text-base leading-5 text-gray-600"
+                            className="font-normal text-base leading-5 text-gray-700"
                             style={{
                               flexShrink: 1,
                               textAlign: "right",
@@ -228,7 +237,7 @@ export default function SurgeriesProcedures() {
                             Complications:
                           </Text>
                           <Text
-                            className="font-normal text-base leading-5 text-gray-600"
+                            className="font-normal text-base leading-5 text-gray-700"
                             style={{
                               flexShrink: 1,
                               textAlign: "right",
@@ -246,7 +255,7 @@ export default function SurgeriesProcedures() {
                             Surgeon’s Name:
                           </Text>
                           <Text
-                            className="font-normal text-base leading-5 text-gray-600"
+                            className="font-normal text-base leading-5 text-gray-700"
                             style={{
                               flexShrink: 1,
                               textAlign: "right",
@@ -263,7 +272,7 @@ export default function SurgeriesProcedures() {
                           Date of surgery:
                         </Text>
                         <Text
-                          className="font-normal text-base leading-5 text-gray-600"
+                          className="font-normal text-base leading-5 text-gray-700"
                           style={{
                             flexShrink: 1,
                             textAlign: "right",
@@ -283,7 +292,7 @@ export default function SurgeriesProcedures() {
                       </View>
                       {/* Details */}
                       {item.details ? (
-                        <Text className="text-base text-gray-500 leading-5">
+                        <Text className="text-base text-gray-700 leading-5">
                           {item.details}
                         </Text>
                       ) : null}
@@ -295,19 +304,15 @@ export default function SurgeriesProcedures() {
           </View>
         </View>
 
-        {/* hr */}
-        <View className="h-px bg-gray-300 mb-2" />
+        <Divider className="bg-gray-300 mb-2" />
 
         {/* Add Button */}
-        <TouchableOpacity
-          className="rounded-md py-3 items-center mt-1"
-          onPress={() => setShowForm(true)}
-          style={{ backgroundColor: palette.primary }}
-        >
-          <Text className="text-white font-medium text-lg">
-            Add Surgery Details
-          </Text>
-        </TouchableOpacity>
+        <View className="py-5">
+          <CustomButton
+            title="Add surgery details"
+            onPress={() => setShowForm(true)}
+          />
+        </View>
       </View>
 
       <CustomAlertDialog
@@ -372,172 +377,153 @@ function AddUpdateFormPage({
     setShowDatePicker(false);
   };
 
+  const isDisabled = procedureName.trim().length === 0 || !dateOfSurgery;
+
   const handleSave = () => {
-    if (procedureName.trim() && dateOfSurgery) {
-      handleAddUpdate({
-        ...(editingItem?.id ? { id: editingItem.id } : {}),
-        procedure_name: procedureName.trim(),
-        facility: facilityName.trim(),
-        complications: complications.trim(),
-        surgeon_name: surgeonName.trim(),
-        procedure_date: dateOfSurgery,
-        details: procedureDesc.trim(),
-      } as SurgeryProcedure);
-    }
+    if (isDisabled) return;
+    handleAddUpdate({
+      ...(editingItem?.id ? { id: editingItem.id } : {}),
+      procedure_name: procedureName.trim(),
+      facility: facilityName.trim(),
+      complications: complications.trim(),
+      surgeon_name: surgeonName.trim(),
+      procedure_date: dateOfSurgery,
+      details: procedureDesc.trim(),
+    } as SurgeryProcedure);
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <SafeAreaView className="flex-1 bg-white">
-        {/* Header */}
-        <Header title="Surgeries / Procedures" onBackPress={onClose} />
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1 }}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+    <SafeAreaView edges={["right", "top", "left"]} className="flex-1 bg-white">
+      {/* Header */}
+      <Header
+        title="Surgeries/Procedure"
+        right={
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text className="text-white font-medium">Cancel</Text>
+          </TouchableOpacity>
+        }
+        onBackPress={onClose}
+      />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        className="bg-white"
+        // behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={"padding"}
+        // keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+      >
+        <ScrollView
+          className="px-5 pt-5 flex-1"
+          contentContainerStyle={{
+            paddingBottom: 30,
+          }}
+          keyboardShouldPersistTaps="handled"
+          // keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={true}
         >
-          <ScrollView
-            className="px-6 pt-8 pb-0 flex-1"
-            contentContainerStyle={{
-              paddingBottom: 48,
-            }}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={true}
-          >
-            <View className="flex-1">
-              <Text
-                className="text-lg font-medium mb-3"
-                style={{ color: palette.heading }}
-              >
-                {editingItem
-                  ? "Update details of recent hospitalizations"
-                  : "Enter details of recent hospitalizations"}
-              </Text>
-              {/* Prodedure Name */}
-              <View className="mb-4">
-                <Text className="text-gray-600 text-sm mb-1">
-                  Procedure Name
-                </Text>
-                <TextInput
-                  value={procedureName}
-                  onChangeText={setProcedureName}
-                  placeholder="Please Enter your topic here"
-                  className="border border-gray-300 rounded-md px-3 py-3 text-base"
-                  multiline
-                  numberOfLines={2}
-                  textAlignVertical="top"
-                />
-              </View>
+          <View className="flex-1">
+            <IconLabelHeading
+              icon={require("@/assets/images/allergies.png")}
+              label={
+                editingItem
+                  ? "Update surgery information"
+                  : "Add surgery information"
+              }
+              // subtitle="Please provide the details below"
+            />
 
-              {/* Facility Name */}
-              <View className="mb-4">
-                <Text className="text-gray-600 text-sm mb-1">
-                  Facility Name, City
-                </Text>
-                <TextInput
-                  value={facilityName}
-                  onChangeText={setFacilityName}
-                  placeholder="Please Enter your topic here"
-                  className="border border-gray-300 rounded-md px-3 py-3 text-base"
-                  multiline
-                  numberOfLines={2}
-                  textAlignVertical="top"
-                />
-              </View>
-              {/* Complications */}
-              <View className="mb-4">
-                <Text className="text-gray-600 text-sm mb-1">
-                  Complications
-                </Text>
-                <TextInput
-                  value={complications}
-                  onChangeText={setComplications}
-                  placeholder="Please enter complications here"
-                  className="border border-gray-300 rounded-md px-3 py-3 text-base"
-                  multiline
-                  numberOfLines={2}
-                  textAlignVertical="top"
-                />
-              </View>
-              {/* Surgeon name */}
-              <View className="mb-4">
-                <Text className="text-gray-600 text-sm mb-1">
-                  Surgeon's Name
-                </Text>
-                <TextInput
-                  value={surgeonName}
-                  onChangeText={setSurgeonName}
-                  placeholder="Please Enter surgeon's name"
-                  className="border border-gray-300 rounded-md px-3 py-3 text-base"
-                  multiline
-                  numberOfLines={2}
-                  textAlignVertical="top"
-                />
-              </View>
-              {/* Date of Surgery*/}
-              <View className="mb-4">
-                <Text className="text-gray-600 text-sm mb-1">
-                  Date of Surgery
-                </Text>
-                <TouchableOpacity
-                  className="border border-gray-300 rounded-md px-3"
-                  onPress={() => setShowDatePicker(true)}
-                >
-                  <View className="flex-row items-center">
-                    <TextInput
-                      value={dateOfSurgery ? formatDate(dateOfSurgery) : ""}
-                      placeholder="MM-DD-YY"
-                      className="flex-1 text-base"
-                      editable={false}
-                      pointerEvents="none"
-                    />
-                    <Icon
-                      as={CalendarDaysIcon}
-                      className="text-typography-500 m-1 w-5 h-5"
-                    />
-                  </View>
-                </TouchableOpacity>
-                <DateTimePickerModal
-                  isVisible={showDatePicker}
-                  mode="date"
-                  onConfirm={handleDateConfirm}
-                  onCancel={() => setShowDatePicker(false)}
-                  // minimumDate={new Date()} // Prevent selecting past dates
-                />
-              </View>
-              {/* Details */}
-              <Text className="text-gray-500 mb-1 text-sm">Description</Text>
-              <Textarea
-                size="md"
-                isReadOnly={false}
-                isInvalid={false}
-                isDisabled={false}
-                className="w-full"
-              >
-                <TextareaInput
-                  placeholder="Enter description"
-                  style={{ textAlignVertical: "top", fontSize: 16 }}
-                  value={procedureDesc}
-                  onChangeText={setProcedureDesc}
-                />
-              </Textarea>
-            </View>
-            {/* Save button */}
-            <TouchableOpacity
-              className="py-3 rounded-md mt-3"
-              style={{ backgroundColor: palette.primary }}
-              onPress={() => {
-                handleSave();
-                onClose(); // Go back to list
-              }}
-            >
-              <Text className="text-white font-bold text-center">
-                {editingItem ? "Update" : "Save"}
+            {/* Prodedure Name */}
+            <CustomFormInput
+              label="Procedure Name *"
+              value={procedureName}
+              onChangeText={setProcedureName}
+              placeholder="Enter procedure name"
+            />
+
+            {/* Facility Name */}
+            <CustomFormInput
+              label="Facility"
+              value={facilityName}
+              onChangeText={setFacilityName}
+              placeholder="Enter facility name"
+            />
+            {/* Complications */}
+            <CustomFormInput
+              label="Complications"
+              value={complications}
+              onChangeText={setComplications}
+              placeholder="Enter any complications"
+            />
+            {/* Surgeon name */}
+            <CustomFormInput
+              label="Surgeon's Name"
+              value={surgeonName}
+              onChangeText={setSurgeonName}
+              placeholder="Enter surgeon's name"
+            />
+            {/* Date of Surgery*/}
+            <View className="mb-4">
+              <Text className="mb-1 ">
+                Date of Surgery *
               </Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </TouchableWithoutFeedback>
+              <TouchableOpacity
+                className="border border-gray-300 rounded-md px-3 py-3"
+                onPress={() => setShowDatePicker(true)}
+                activeOpacity={0.7}
+              >
+                <View className="flex-row items-center">
+                  <Text
+                    className={`flex-1 text-base ${
+                      dateOfSurgery ? "text-black" : "text-gray-500"
+                    }`}
+                  >
+                    {dateOfSurgery ? formatDate(dateOfSurgery) : "MM-DD-YY"}
+                  </Text>
+                  <Icon
+                    as={CalendarDaysIcon}
+                    className="text-gray-500 w-5 h-5"
+                  />
+                </View>
+              </TouchableOpacity>
+              <DateTimePickerModal
+                isVisible={showDatePicker}
+                mode="date"
+                onConfirm={handleDateConfirm}
+                onCancel={() => setShowDatePicker(false)}
+                // minimumDate={new Date()} // Prevent selecting past dates
+              />
+            </View>
+            {/* Details */}
+            <Text className=" mb-1 text-base ">
+              Description
+            </Text>
+            <Textarea
+              size="md"
+              isReadOnly={false}
+              isInvalid={false}
+              isDisabled={false}
+              className="w-full rounded-lg"
+            >
+              <TextareaInput
+                placeholder="Enter procedure details"
+                style={{ textAlignVertical: "top", fontSize: 16 }}
+                value={procedureDesc}
+                onChangeText={setProcedureDesc}
+              />
+            </Textarea>
+          </View>
+        </ScrollView>
+        {/* Save button */}
+        <View className="p-5">
+          <CustomButton
+            title={editingItem ? "Update" : "Save"}
+            onPress={() => {
+              handleSave();
+              onClose(); // Go back to list
+            }}
+            disabled={isDisabled}
+          />
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
