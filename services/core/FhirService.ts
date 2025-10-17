@@ -28,9 +28,12 @@ export async function safeFetch<T>(
           diagnostics: outcome.issue?.[0].diagnostics?.split(' - Server ')[0]
         }));
 
-      // Hard failure if any issue has severity 'error' or 'fatal'
-      const hasFatal = outcome.issue?.some(i => ["error", "fatal"].includes(i.severity ?? ""));
-      if (hasFatal) return null;
+      // Hard failure if any issue has severity 'fatal'
+      const hasFatal = outcome.issue?.some(i => ["fatal"].includes(i.severity ?? ""));
+      if (hasFatal) {
+        err.isHardFailure = true; // Mark as hard failure for retry logic
+        return null; // immediately fail
+      }
 
       return outcome as T; // allow mapping for warnings/info
     }
@@ -55,7 +58,7 @@ async function fetchAndMap<T, U>(
   const response = await safeFetch(apiCall, {} as T);
 
   if (!response) {
-    logger.debug("FHIR fetch failed after retries for", mapper.name);
+    logger.debug("FHIR fetch failed !! ");
     return null; // fallback handled here
   }
 
