@@ -5,4 +5,4 @@ export const FHIR_CONFIG = {
   RETRY_DELAY: 1000,
 };
 
-export const PATIENT_FHIR_ID = 53373;
+export const PATIENT_FHIR_ID = "53373";
