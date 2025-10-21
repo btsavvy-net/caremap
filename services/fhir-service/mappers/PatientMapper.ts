@@ -10,7 +10,6 @@ export const PatientMapper: Mapper<Fhir.Patient, DbPatient> = {
         const nameObj = fhir.name?.[0] || {};
 
         return {
-            id: Number(fhir.id) || 0,
             first_name: nameObj.given?.[0] || "",
             middle_name: nameObj.given?.[1],
             last_name: nameObj.family || "",

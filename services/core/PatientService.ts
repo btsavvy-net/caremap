@@ -44,7 +44,7 @@ export const createPatient = async (patient: Partial<Patient>): Promise<Patient 
         };
 
         const created = await model.insert(newPatient);
-        logger.debug("Patient created: ", created);
+        logger.debugTrunc("Patient created: ", created);
 
         // If we got a raw SQLite result instead of a patient object, fetch the patient
         if (created && !created.id && created.lastInsertRowId) {
@@ -58,7 +58,7 @@ export const createPatient = async (patient: Partial<Patient>): Promise<Patient 
 export const getPatient = async (id: number): Promise<Patient | null> => {
     return useModel(patientModel, async (model) => {
         const result = await model.getFirstByFields({ id });
-        logger.debug("DB Patient data: ", result);
+        logger.debugTrunc("DB Patient data: ", result);
         return result;
     });
 }
@@ -66,7 +66,7 @@ export const getPatient = async (id: number): Promise<Patient | null> => {
 export const getPatientByUserId = async (userId: string): Promise<Patient | null> => {
     return useModel(patientModel, async (model) => {
         const result = await model.getFirstByFields({ user_id: userId });
-        logger.debug("DB Patient data by user ID: ", result);
+        logger.debugTrunc("DB Patient data by user ID: ", result);
         return result;
     });
 }
@@ -74,7 +74,7 @@ export const getPatientByUserId = async (userId: string): Promise<Patient | null
 export const getPatientByFhirId = async (fhirId: string): Promise<Patient | null> => {
     return useModel(patientModel, async (model) => {
         const result = await model.getFirstByFields({ fhir_id: fhirId });
-        logger.debug("DB Patient data by user ID: ", result);
+        logger.debugTrunc("DB Patient data by user ID: ", result);
         return result;
     });
 }
@@ -92,7 +92,7 @@ export const updatePatient = async (patientUpdate: Partial<Patient>, whereMap: P
             updated_date: getCurrentTimestamp()
         };
         const updatedPatient = await model.updateByFields(updateData, whereMap);
-        logger.debug("Updated Patient: ", updatedPatient);
+        logger.debugTrunc("Updated Patient: ", updatedPatient);
         return updatedPatient;
     });
 }

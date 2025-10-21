@@ -1,7 +1,8 @@
 import { createApiService, retry } from "@/services/api/ApiService";
-import { Patient as DbPatient } from '@/services/database/migrations/v1/schema_v1';
+import { Patient as DbPatient, PatientAllergy } from '@/services/database/migrations/v1/schema_v1';
 import { Fhir } from "@/services/fhir-service/Fhir";
 import { FHIR_CONFIG } from "@/services/fhir-service/fhir-config";
+import { PatientAllergyMapper } from "@/services/fhir-service/mappers/PatientAllergyMapper";
 import { PatientMapper } from "@/services/fhir-service/mappers/PatientMapper";
 import { logger } from "@/services/logging/logger";
 
@@ -74,18 +75,33 @@ const api = createApiService({
 
 export const FhirService = {
   // Maps FHIR Patient to DB Patient
-  getPatient: async (patientId: string): Promise<Partial<DbPatient> | null> => {
+  getPatient: async (patientFhirId: string): Promise<Partial<DbPatient> | null> => {
     return fetchAndMap(
-      () => api.get(`/Patient/${patientId}?_format=json`) as Promise<Fhir.Patient>,
+      () => api.get(`/Patient/${patientFhirId}?_format=json`) as Promise<Fhir.Patient>,
       PatientMapper.toDb
     );
   },
 
   // All resource records for FHIR Patient
-  getEverything: async (patientId: string): Promise<Fhir.Bundle | null> => {
+  getEverything: async (patientFhirId: string): Promise<Fhir.Bundle | null> => {
     return fetchAndMap(
-      () => api.get(`/Patient/${patientId}/$everything?_format=json`) as Promise<Fhir.Bundle>,
+      () => api.get(`/Patient/${patientFhirId}/$everything?_format=json`) as Promise<Fhir.Bundle>,
       (x) => x
     );
   },
+
+  getPatientAllergies: async (patientFhirId: string, dbPatientId: number): Promise<Partial<PatientAllergy>[] | null> => {
+    return fetchAndMap(
+      async () => {
+        const bundle = await api.get(`/AllergyIntolerance?patient=${patientFhirId}&_format=json`) as unknown as Promise<Fhir.Bundle<Fhir.AllergyIntolerance>>;
+        logger.debug("ALLERGIES : ", JSON.stringify(bundle));
+        // Filter only AllergyIntolerance resources
+        const allergyResources = (await bundle).entry?.map(e => e.resource).filter(
+          (r): r is Fhir.AllergyIntolerance => r?.resourceType === "AllergyIntolerance"
+        ) ?? [];
+        return allergyResources;
+      },
+      (fhirAllergies) => fhirAllergies.map((fhirAllergy) => PatientAllergyMapper.toDb(fhirAllergy, dbPatientId))
+    );
+  }
 };

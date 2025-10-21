@@ -1,3 +1,4 @@
+import { SeverityType } from "@/constants/fhirTypes";
 import { NumericSubtype, QuestionType, TrackingFrequency } from "@/constants/trackTypes";
 import { Units } from "@/constants/units";
 
@@ -19,7 +20,7 @@ export interface SyncPatientData {
 export interface Patient {
   id: number;
   user_id: string;
-  fhir_id:string;
+  fhir_id: string;
   blood_type?: string;
   date_of_birth?: Date;
   first_name: string;
@@ -88,10 +89,11 @@ export interface PatientAllergy {
   id: number;
   patient_id: number;
   linked_health_system: boolean;
+  fhir_id?: string;
   topic: string;
   details?: string;
   onset_date: Date;
-  severity?: "Mild" | "Moderate" | "Severe";
+  severity?: SeverityType;
   created_date: Date;
   updated_date: Date;
 }

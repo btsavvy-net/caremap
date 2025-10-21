@@ -1,7 +1,9 @@
+import { deletePatientByFhirId, getPatientByFhirId, updatePatient } from "@/services/core/PatientService";
+import { BaseModel, useModel } from "@/services/database/BaseModel";
 import { Patient as DbPatient } from "@/services/database/migrations/v1/schema_v1";
+import { PatientAllergyModel } from "@/services/database/models/PatientAllergyModel";
 import { logger } from "@/services/logging/logger";
 import { FhirService } from "../core/FhirService";
-import { deletePatientByFhirId, getPatientByFhirId, updatePatient } from "@/services/core/PatientService";
 
 function getSyncAction<T>(fhirData: T | null, exists: boolean) {
     if (!fhirData && exists) return "delete";
@@ -10,9 +12,30 @@ function getSyncAction<T>(fhirData: T | null, exists: boolean) {
     return "skip";
 }
 
+function createFhirLinkedService<T>(model: BaseModel<T>) {
+    return {
+        getByFhirId: async (patientId: number, fhirId: string) =>
+            useModel(model, (m) => m.getFirstByFields({ patient_id: patientId, fhir_id: fhirId })),
+
+        create: async (data: Partial<T>) =>
+            useModel(model, (m) => m.insert(data)),
+
+        updateByFhirId: async (data: Partial<T>, where: Partial<T>) =>
+            useModel(model, (m) => m.updateByFields(data, where)),
+
+        deleteByFhirId: async (where: Partial<T>) =>
+            useModel(model, (m) => m.deleteByFields(where)),
+    };
+}
+
+export const PatientAllergyService = createFhirLinkedService(new PatientAllergyModel());
+
 export async function handleBackgroundFhirSync(patient: DbPatient) {
+
     logger.debug(`[FHIR SYNC] Starting background sync for patient ${patient.id}`);
-    
+
+    // Patient record sync
+
     const fhirPatient = await FhirService.getPatient(patient.fhir_id);
     const existingPatient = await getPatientByFhirId(patient.fhir_id);
     const patientAction = getSyncAction(fhirPatient, !!existingPatient);
@@ -28,6 +51,47 @@ export async function handleBackgroundFhirSync(patient: DbPatient) {
     if (patientAction === "update") {
         await updatePatient(fhirPatient!, { fhir_id: existingPatient?.fhir_id });
     }
+
+
+    // Patient Health records sync
+
+    const resourcesToSync = [
+        { name: "Allergy", fetch: FhirService.getPatientAllergies, service: PatientAllergyService },
+        // add more here in same pattern
+    ];
+
+    for (const { name, fetch, service } of resourcesToSync) {
+        try {
+            const fhirItems = await fetch(patient.fhir_id, patient.id); // returns DbEntity[] | null
+            if (!fhirItems) {
+                logger.debug(`[FHIR SYNC][${name}] No FHIR data returned.`);
+                continue;
+            }
+
+            for (const fhirItem of fhirItems) {
+                if (!fhirItem || !fhirItem.fhir_id) {
+                    logger.debug(`[FHIR SYNC][${name}] Skipping item without fhir_id`);
+                    continue;
+                }
+                const existing = await service.getByFhirId(patient.id, fhirItem.fhir_id);
+                const action = getSyncAction(fhirItem, !!existing);
+
+                logger.debug(`[FHIR SYNC][${name}] Action: ${action}`);
+
+                if (action === "delete") {
+                    await service.deleteByFhirId({ patient_id: patient.id, fhir_id: fhirItem.fhir_id });
+                } else if (action === "create") {
+                    logger.debug('[FHIR SYNC][Allergy]', JSON.stringify({ ...fhirItem }));
+                    await service.create(fhirItem); // <-- use create for new items
+                } else if (action === "update") {
+                    await service.updateByFhirId(fhirItem, { patient_id: patient.id, fhir_id: fhirItem.fhir_id });
+                }
+            }
+        } catch (err: any) {
+            logger.debug(`[FHIR SYNC][${name}] Error: ${err.message}`);
+        }
+    }
+
 
     logger.debug(`[FHIR SYNC] Completed successfully for patient ${patient.id}`);
 }
