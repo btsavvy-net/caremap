@@ -264,7 +264,7 @@ export const getDateBasedInsights = async (
                 questionId,
                 transform: questionType,
                 topicId,
-                topic: `${topicName} (Weekly Trend)`,
+                topic: `${topicName} (Weekly)`,
                 data: weeklyTrend
             });
         }
@@ -280,7 +280,7 @@ export const getDateBasedInsights = async (
                 questionId,
                 transform: questionType,
                 topicId,
-                topic: `${topicName} (Monthly Trend)`,
+                topic: `${topicName} (Monthly)`,
                 data: monthlyTrend
             });
         }
@@ -296,7 +296,7 @@ export const getDateBasedInsights = async (
                 questionId,
                 transform: questionType,
                 topicId,
-                topic: `${topicName} (Quarterly Trend)`,
+                topic: `${topicName} (Quarterly)`,
                 data: quarterlyTrend
             });
         }
