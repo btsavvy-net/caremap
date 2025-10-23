@@ -32,11 +32,12 @@ import CommonConditions from "@/components/shared/CommonConditions";
 import { CustomFormInput } from "@/components/shared/CustomFormInput";
 import { Calendar } from "lucide-react-native";
 import { Icon } from "@/components/ui/icon";
+import LinkedHealthSystemList from "@/components/shared/LinkedHealthSystemList";
 
-const linkedHealthSystem: string[] = [
-  "Attention Deficient and Hyperactivity Disorder (ADHD)",
-  "Irritable Bowel Syndrome (IBS)",
-];
+// const linkedHealthSystem: string[] = [
+//   "Attention Deficient and Hyperactivity Disorder (ADHD)",
+//   "Irritable Bowel Syndrome (IBS)",
+// ];
 
 export default function MedicalConditions() {
   const { patient } = useContext(PatientContext);
@@ -103,6 +104,18 @@ export default function MedicalConditions() {
     }
   };
 
+  const normalizedUserConditions = userConditions.map((a) => ({
+    ...a,
+    linked_health_system: !!a.linked_health_system,
+  }));
+
+  const linkedUserConditions = normalizedUserConditions.filter(
+    (a) => a.linked_health_system === true
+  );
+  const personalUserConditions = normalizedUserConditions.filter(
+    (a) => !a.linked_health_system
+  );
+
   // open edit form
   const handleEdit = (condition: PatientCondition) => {
     setEditingCondition(condition);
@@ -160,30 +173,11 @@ export default function MedicalConditions() {
             icon={require("@/assets/images/medical-condition.png")}
             label="Medical Conditions(Linked Health System)"
             subtitle="Imported from your healthcare provider"
-            count={linkedHealthSystem.length}
+            count={linkedUserConditions.length}
           />
+          <LinkedHealthSystemList data={linkedUserConditions} titleKey="condition_name"/>
 
           <Divider className="bg-gray-300 my-2" />
-
-          <View>
-            <FlatList
-              data={linkedHealthSystem}
-              renderItem={({ item }) => (
-                <View className="border border-gray-200 rounded-lg p-2 bg-gray-100 mb-3">
-                  <Text className="text-lg">{item}</Text>
-                </View>
-              )}
-              keyExtractor={(_, index) => index.toString()}
-              ListEmptyComponent={
-                <Text className="text-gray-500 text-lg">
-                  No user linked health system found.
-                </Text>
-              }
-              showsVerticalScrollIndicator={true}
-              scrollEnabled={true}
-              style={{ minHeight: 50, maxHeight: 200 }}
-            />
-          </View>
         </View>
 
         {/* User Entered */}
@@ -192,14 +186,14 @@ export default function MedicalConditions() {
             icon={require("@/assets/images/medical-condition.png")}
             label="Medical Conditions (User entered)"
             subtitle="Conditions you've added manually"
-            count={userConditions.length}
+            count={personalUserConditions.length}
           />
 
           <Divider className="bg-gray-300 my-2" />
 
           <View className="flex-1">
             <FlatList
-              data={userConditions}
+              data={personalUserConditions}
               keyExtractor={(item) => item.id.toString()}
               scrollEnabled={true}
               showsVerticalScrollIndicator={true}
@@ -207,36 +201,35 @@ export default function MedicalConditions() {
                 const formattedDate = getFormattedConditionDate(item);
                 return (
                   <View className="flex-row items-center justify-between border border-gray-300 rounded-lg px-3 py-3 mb-3">
-  {/* Left section */}
-  <View className="flex-1">
-    <Text className="text-lg font-medium text-left text-black max-w-[220px] ml-2">
-      {item.condition_name}
-    </Text>
+                    {/* Left section */}
+                    <View className="flex-1">
+                      <Text className="text-lg font-medium text-left text-black max-w-[220px] ml-2">
+                        {item.condition_name}
+                      </Text>
 
-    <View className="flex-row items-center mt-1">
-      <Icon
-        as={Calendar}
-        size="sm"
-        className="text-gray-600 mr-1"
-      />
-      <Text className="text-base text-gray-500">
-        {formattedDate}
-      </Text>
-    </View>
-  </View>
+                      <View className="flex-row items-center mt-1">
+                        <Icon
+                          as={Calendar}
+                          size="sm"
+                          className="text-gray-600 mr-1"
+                        />
+                        <Text className="text-base text-gray-500">
+                          {formattedDate}
+                        </Text>
+                      </View>
+                    </View>
 
-  {/* Right section */}
-  <View className="flex-row items-center ml-2">
-    <ActionPopover
-      onEdit={() => handleEdit(item)}
-      onDelete={() => {
-        setConditionToDelete(item);
-        setShowAlertDialog(true);
-      }}
-    />
-  </View>
-</View>
-
+                    {/* Right section */}
+                    <View className="flex-row items-center ml-2">
+                      <ActionPopover
+                        onEdit={() => handleEdit(item)}
+                        onDelete={() => {
+                          setConditionToDelete(item);
+                          setShowAlertDialog(true);
+                        }}
+                      />
+                    </View>
+                  </View>
                 );
               }}
               ListEmptyComponent={
@@ -277,14 +270,7 @@ export default function MedicalConditions() {
           setConditionToDelete(null);
         }}
       >
-        {/* children prop */}
-        {/* <View className="flex-row items-center justify-between border border-gray-300 rounded-lg px-3 py-3 mb-3">
-          <View className="flex-row items-center">
-            <Text className="text-lg px-1 text-left">
-              {conditionToDelete?.condition_name}
-            </Text>
-          </View>
-        </View> */}
+        
       </CustomAlertDialog>
     </SafeAreaView>
   );

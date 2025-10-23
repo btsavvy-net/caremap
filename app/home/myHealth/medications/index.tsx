@@ -30,7 +30,9 @@ import { CustomButton } from "@/components/shared/CustomButton";
 import IconLabelHeading from "@/components/shared/IconLabelHeading";
 import { CustomFormInput } from "@/components/shared/CustomFormInput";
 import { Textarea, TextareaInput } from "@/components/ui/textarea";
-const linkedHealthSystem: string[] = [];
+import LinkedHealthSystemList from "@/components/shared/LinkedHealthSystemList";
+
+
 export default function MedicationsScreen() {
   const { patient } = useContext(PatientContext);
   const [medicationList, setMedicationList] = useState<PatientMedication[]>([]);
@@ -89,6 +91,20 @@ export default function MedicationsScreen() {
     setEditingItem(null);
   };
 
+
+    const normalizedMedication = medicationList.map((a) => ({
+      ...a,
+      linked_health_system: !!a.linked_health_system,
+    }));
+  
+    const linkedMedicationList = normalizedMedication.filter(
+      (a) => a.linked_health_system === true
+    );
+    // logToLogBoxAndConsole("Linked Allergies: ", linkedAllergies);
+    const personalMedicationList = normalizedMedication.filter(
+      (a) => !a.linked_health_system
+    );
+
   const refreshCareList = async () => {
     if (patient?.id) {
       const updatedList = await getPatientMedicationsByPatientId(patient.id);
@@ -126,20 +142,21 @@ export default function MedicationsScreen() {
           icon={require("@/assets/images/medications.png")}
           label="Medications (Linked Health System)"
           subtitle="Medications imported from your linked health system"
-          count={linkedHealthSystem.length}
+          count={linkedMedicationList.length}
         />
+          <LinkedHealthSystemList data={linkedMedicationList} titleKey="name"/>
 
         <Divider className="bg-gray-300 my-2" />
         <IconLabelHeading
           icon={require("@/assets/images/medications.png")}
           label="List your active medications"
           subtitle="Manage your personal medication records"
-          count={medicationList.length}
+          count={personalMedicationList.length}
         />
 
 
         <FlatList
-          data={medicationList}
+          data={personalMedicationList}
           keyExtractor={(item) => item.id.toString()}
           showsVerticalScrollIndicator={true}
           renderItem={({ item }) => (
