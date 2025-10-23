@@ -18,7 +18,7 @@ const TrackCalendar: React.FC<CalendarProps> = ({
   return (
     <CalendarStrip
       scrollable
-      style={{ height: 120, paddingTop: 10, paddingBottom: 10 }}
+      style={{ height: 95, paddingTop: 2, paddingBottom: 2 }}
       calendarColor={palette.primary}
       startingDate={moment().subtract(3, "days")}
       calendarHeaderStyle={{ color: palette.whiteColor, fontSize: 16 }}
