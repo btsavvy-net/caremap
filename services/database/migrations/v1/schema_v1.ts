@@ -103,6 +103,7 @@ export interface PatientMedication {
   id: number;
   patient_id: number;
   linked_health_system: boolean;
+  fhir_id?: string;
   name: string;
   details: string;
   created_date: Date;

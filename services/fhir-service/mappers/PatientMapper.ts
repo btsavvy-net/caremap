@@ -1,8 +1,7 @@
 import { Patient as DbPatient } from "@/services/database/migrations/v1/schema_v1";
 import { Fhir } from "@/services/fhir-service/Fhir";
-import { Mapper } from "@/services/fhir-service/mappers/BaseMapper";
 
-export const PatientMapper: Mapper<Fhir.Patient, DbPatient> = {
+export const PatientMapper = {
 
     toDb: (fhir: Fhir.Patient): Partial<DbPatient> => {
         if (!fhir) return {};

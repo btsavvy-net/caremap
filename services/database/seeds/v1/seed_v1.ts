@@ -134,34 +134,6 @@ export async function seedDatabase(db: SQLiteDatabase) {
       );
     }
 
-    // Insert patient medications
-    for (const medication of samplePatientMedications) {
-      if (!medication.patient_id || !medication.name) continue;
-      await db.execAsync(
-        `INSERT INTO ${tables.PATIENT_MEDICATION} (
-                    patient_id,
-                    name,
-                    details,
-                    linked_health_system,
-                    created_date,
-                    updated_date
-                ) VALUES (
-                    ${medication.patient_id},
-                    '${escapeSQL(medication.name)}',
-                    '${escapeSQL(medication.details)}',
-                    ${medication.linked_health_system ? 1 : 0},
-                    '${
-                      medication.created_date?.toISOString() ||
-                      new Date().toISOString()
-                    }',
-                    '${
-                      medication.updated_date?.toISOString() ||
-                      new Date().toISOString()
-                    }'
-                )`
-      );
-    }
-
     for (const hosp of sampleHospitalizations) {
       if (!hosp.patient_id || !hosp.admission_date || !hosp.discharge_date)
         continue;

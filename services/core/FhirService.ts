@@ -1,10 +1,11 @@
 import { createApiService, retry } from "@/services/api/ApiService";
-import { Patient as DbPatient, PatientAllergy, PatientCondition } from '@/services/database/migrations/v1/schema_v1';
+import { Patient as DbPatient, PatientAllergy, PatientCondition, PatientMedication } from '@/services/database/migrations/v1/schema_v1';
 import { Fhir } from "@/services/fhir-service/Fhir";
 import { FHIR_CONFIG } from "@/services/fhir-service/fhir-config";
 import { PatientAllergyMapper } from "@/services/fhir-service/mappers/PatientAllergyMapper";
 import { PatientConditionMapper } from "@/services/fhir-service/mappers/PatientConditionMapper";
 import { PatientMapper } from "@/services/fhir-service/mappers/PatientMapper";
+import { PatientMedicationMapper } from "@/services/fhir-service/mappers/PatientMedicationMapper";
 import { logger } from "@/services/logging/logger";
 
 export async function safeFetch<T>(
@@ -114,6 +115,19 @@ export const FhirService = {
         return allergyResources;
       },
       (fhirAllergies) => fhirAllergies.map((fhirAllergy) => PatientAllergyMapper.toDb(fhirAllergy, dbPatientId))
+    );
+  },
+
+  getPatientMedications: async (patientFhirId: string, dbPatientId: number): Promise<Partial<PatientMedication>[] | null> => {
+    return fetchAndMap(
+      async () => {
+        const bundle = await api.get(`/MedicationStatement?patient=${patientFhirId}&_format=json`) as unknown as Promise<Fhir.Bundle<Fhir.MedicationStatement>>;
+        const medicationResources = (await bundle).entry?.map(e => e.resource).filter(
+          (r): r is Fhir.MedicationStatement => r?.resourceType === "MedicationStatement"
+        ) ?? [];
+        return medicationResources;
+      },
+      (fhirMedications) => fhirMedications.map((fhirMedication) => PatientMedicationMapper.toDb(fhirMedication, dbPatientId))
     );
   },
 
