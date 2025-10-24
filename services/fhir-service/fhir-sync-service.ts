@@ -4,6 +4,7 @@ import { Patient as DbPatient } from "@/services/database/migrations/v1/schema_v
 import { PatientAllergyModel } from "@/services/database/models/PatientAllergyModel";
 import { logger } from "@/services/logging/logger";
 import { FhirService } from "../core/FhirService";
+import { PatientConditionModel } from "../database/models/PatientConditionModel";
 
 function getSyncAction<T>(fhirData: T | null, exists: boolean) {
     if (!fhirData && exists) return "delete";
@@ -29,6 +30,7 @@ function createFhirLinkedService<T>(model: BaseModel<T>) {
 }
 
 export const PatientAllergyService = createFhirLinkedService(new PatientAllergyModel());
+export const PatientConditionService = createFhirLinkedService(new PatientConditionModel());
 
 export async function handleBackgroundFhirSync(patient: DbPatient) {
 
@@ -56,7 +58,8 @@ export async function handleBackgroundFhirSync(patient: DbPatient) {
     // Patient Health records sync
 
     const resourcesToSync = [
-        { name: "Allergy", fetch: FhirService.getPatientAllergies, service: PatientAllergyService },
+        { name: "Medical Condition", fetch: FhirService.getPatientConditions, service: PatientConditionService },
+        { name: "Patient Allergy", fetch: FhirService.getPatientAllergies, service: PatientAllergyService },
         // add more here in same pattern
     ];
 
@@ -82,7 +85,7 @@ export async function handleBackgroundFhirSync(patient: DbPatient) {
                     await service.deleteByFhirId({ patient_id: patient.id, fhir_id: fhirItem.fhir_id });
                 } else if (action === "create") {
                     logger.debug('[FHIR SYNC][Allergy]', JSON.stringify({ ...fhirItem }));
-                    await service.create(fhirItem); // <-- use create for new items
+                    await service.create(fhirItem);
                 } else if (action === "update") {
                     await service.updateByFhirId(fhirItem, { patient_id: patient.id, fhir_id: fhirItem.fhir_id });
                 }

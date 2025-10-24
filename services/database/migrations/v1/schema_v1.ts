@@ -50,6 +50,7 @@ export interface PatientCondition {
   id: number;
   patient_id: number;
   linked_health_system: boolean;
+  fhir_id?: string;
   condition_name: string;
   created_date: Date;
   updated_date: Date;

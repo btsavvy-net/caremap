@@ -1,8 +1,9 @@
 import { createApiService, retry } from "@/services/api/ApiService";
-import { Patient as DbPatient, PatientAllergy } from '@/services/database/migrations/v1/schema_v1';
+import { Patient as DbPatient, PatientAllergy, PatientCondition } from '@/services/database/migrations/v1/schema_v1';
 import { Fhir } from "@/services/fhir-service/Fhir";
 import { FHIR_CONFIG } from "@/services/fhir-service/fhir-config";
 import { PatientAllergyMapper } from "@/services/fhir-service/mappers/PatientAllergyMapper";
+import { PatientConditionMapper } from "@/services/fhir-service/mappers/PatientConditionMapper";
 import { PatientMapper } from "@/services/fhir-service/mappers/PatientMapper";
 import { logger } from "@/services/logging/logger";
 
@@ -90,12 +91,23 @@ export const FhirService = {
     );
   },
 
+  getPatientConditions: async (patientFhirId: string, dbPatientId: number): Promise<Partial<PatientCondition>[] | null> => {
+    return fetchAndMap(
+      async () => {
+        const bundle = await api.get(`/Condition?patient=${patientFhirId}&_format=json`) as unknown as Promise<Fhir.Bundle<Fhir.Condition>>;
+        const conditionResources = (await bundle).entry?.map(e => e.resource).filter(
+          (r): r is Fhir.Condition => r?.resourceType === "Condition"
+        ) ?? [];
+        return conditionResources;
+      },
+      (fhirConditions) => fhirConditions.map((fhirCondition) => PatientConditionMapper.toDb(fhirCondition, dbPatientId))
+    );
+  },
+
   getPatientAllergies: async (patientFhirId: string, dbPatientId: number): Promise<Partial<PatientAllergy>[] | null> => {
     return fetchAndMap(
       async () => {
         const bundle = await api.get(`/AllergyIntolerance?patient=${patientFhirId}&_format=json`) as unknown as Promise<Fhir.Bundle<Fhir.AllergyIntolerance>>;
-        logger.debug("ALLERGIES : ", JSON.stringify(bundle));
-        // Filter only AllergyIntolerance resources
         const allergyResources = (await bundle).entry?.map(e => e.resource).filter(
           (r): r is Fhir.AllergyIntolerance => r?.resourceType === "AllergyIntolerance"
         ) ?? [];
@@ -103,5 +115,6 @@ export const FhirService = {
       },
       (fhirAllergies) => fhirAllergies.map((fhirAllergy) => PatientAllergyMapper.toDb(fhirAllergy, dbPatientId))
     );
-  }
+  },
+
 };

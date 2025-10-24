@@ -47,32 +47,6 @@ export async function seedDatabase(db: SQLiteDatabase) {
       );
     }
 
-    // Insert patient conditions
-    for (const condition of samplePatientConditions) {
-      if (!condition.patient_id || !condition.condition_name) continue;
-      await db.execAsync(
-        `INSERT INTO ${tables.PATIENT_CONDITION} (
-                    patient_id,
-                    condition_name,
-                    linked_health_system,
-                    created_date,
-                    updated_date
-                ) VALUES (
-                    ${condition.patient_id},
-                    '${escapeSQL(condition.condition_name)}',
-                    ${condition.linked_health_system ? 1 : 0},
-                    '${
-                      condition.created_date?.toISOString() ||
-                      new Date().toISOString()
-                    }',
-                    '${
-                      condition.updated_date?.toISOString() ||
-                      new Date().toISOString()
-                    }'
-                )`
-      );
-    }
-
     // Insert patient equipment
     for (const equipment of samplePatientEquipment) {
       if (!equipment.patient_id || !equipment.equipment_name) continue;
@@ -159,41 +133,6 @@ export async function seedDatabase(db: SQLiteDatabase) {
                 )`
       );
     }
-
-    // Insert patient allergies
-    // for (const allergy of samplePatientAllergies) {
-    //   if (!allergy.patient_id || !allergy.topic) continue;
-    //   await db.execAsync(
-    //     `INSERT INTO ${tables.PATIENT_ALLERGY} (
-    //                 patient_id,
-    //                 topic,
-    //                 details,
-    //                 severity,
-    //                 onset_date,
-    //                 linked_health_system,
-    //                 created_date,
-    //                 updated_date
-    //             ) VALUES (
-    //                 ${allergy.patient_id},
-    //                 '${escapeSQL(allergy.topic)}',
-    //                 '${escapeSQL(allergy.details)}',
-    //                 '${escapeSQL(allergy.severity)}',
-    //                 '${
-    //                   allergy.onset_date?.toISOString() ||
-    //                   new Date().toISOString()
-    //                 }',
-    //                 ${allergy.linked_health_system ? 1 : 0},
-    //                 '${
-    //                   allergy.created_date?.toISOString() ||
-    //                   new Date().toISOString()
-    //                 }',
-    //                 '${
-    //                   allergy.updated_date?.toISOString() ||
-    //                   new Date().toISOString()
-    //                 }'
-    //             )`
-    //   );
-    // }
 
     // Insert patient medications
     for (const medication of samplePatientMedications) {
