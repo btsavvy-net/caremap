@@ -107,8 +107,8 @@ const maxY = Math.ceil(Math.max(...chartData.map((d:any) => d.value)) / 10) * 10
   <LineChart
     areaChart
     data={chartData}
-    height={160}
-    rotateLabel
+    height={140}
+    // rotateLabel
     width={300}
     spacing={60}
     
@@ -124,7 +124,7 @@ const maxY = Math.ceil(Math.max(...chartData.map((d:any) => d.value)) / 10) * 10
     noOfSections={4}
     yAxisColor="transparent"
     yAxisThickness={0}
-    rulesType="solid"
+    rulesType="dotted"
     rulesColor="lightgray"
     yAxisTextStyle={{ color: black }}
     // yAxisSide="right"
