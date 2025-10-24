@@ -32,6 +32,7 @@ import IconLabelHeading from "@/components/shared/IconLabelHeading";
 import { Icon } from "@/components/ui/icon";
 import { Calendar } from "lucide-react-native";
 import { CustomFormInput } from "@/components/shared/CustomFormInput";
+import LinkedHealthSystemList from "@/components/shared/LinkedHealthSystemList";
 
 export default function Allergies() {
   const { patient } = useContext(PatientContext);
@@ -46,7 +47,6 @@ export default function Allergies() {
   const [allergyToDelete, setAllergyToDelete] = useState<PatientAllergy | null>(
     null
   );
-  const linkedHealthSystem: string[] = [];
   // Custom toast
   const showToast = useCustomToast();
 
@@ -100,6 +100,18 @@ export default function Allergies() {
       });
     }
   };
+
+  const normalizedAllergies = patientAllergy.map((a) => ({
+    ...a,
+    linked_health_system: !!a.linked_health_system,
+  }));
+
+  const linkedAllergies = normalizedAllergies.filter(
+    (a) => a.linked_health_system === true
+  );
+  const personalAllergies = normalizedAllergies.filter(
+    (a) => !a.linked_health_system
+  );
 
   // open edit form
   const handleEditAllergy = (allergy: PatientAllergy) => {
@@ -157,91 +169,90 @@ export default function Allergies() {
             icon={require("@/assets/images/allergies.png")}
             label="Allergies (Linked Health System)"
             subtitle="Select ones to review with your care team"
-            count={linkedHealthSystem.length}
+            count={linkedAllergies.length}
           />
-
+          <LinkedHealthSystemList data={linkedAllergies} titleKey="topic"/>
           <Divider className="bg-gray-300 my-3" />
         </View>
-
-        <View className="flex-1">
-          <IconLabelHeading
-            icon={require("@/assets/images/allergies.png")}
-            label="List your allergies"
-            subtitle="Manage your personal allergy records"
-            count={patientAllergy.length}
-          />
-
-          {/* <Divider className="bg-gray-300 my-3" /> */}
-
+        
           <View className="flex-1">
-            <FlatList
-              data={patientAllergy}
-              keyExtractor={(item) => item.id.toString()}
-              scrollEnabled={true}
-              showsVerticalScrollIndicator={true}
-              renderItem={({ item }) => {
-                const formattedDate = getFormattedConditionDate(item);
-                return (
-                  <View className="border border-gray-300 rounded-lg mb-3 px-3 py-3">
-                    <View className="flex-row items-center justify-between">
-                      <View className="flex-row items-center space-x-2">
-                        <Text className="text-lg ml-3 max-w-[220px] text-left font-semibold">
-                          {item.topic}
-                        </Text>
-                      </View>
-                      <View className="flex-row">
-                        <View className="flex-row items-center ">
-                          <Icon
-                            as={Calendar}
-                            size="sm"
-                            className="text-gray-600 mr-1"
-                          />
-                          <Text className="text-lg text-gray-700 mr-3">
-                            {formattedDate}
+            <IconLabelHeading
+              icon={require("@/assets/images/allergies.png")}
+              label="List your allergies"
+              subtitle="Manage your personal allergy records"
+              count={personalAllergies.length}
+            />
+
+
+            <View className="flex-1">
+              <FlatList
+                data={personalAllergies}
+                keyExtractor={(item) => item.id.toString()}
+                scrollEnabled={true}
+                showsVerticalScrollIndicator={true}
+                renderItem={({ item }) => {
+                  const formattedDate = getFormattedConditionDate(item);
+                  return (
+                    <View className="border border-gray-300 rounded-lg mb-3 px-3 py-3">
+                      <View className="flex-row items-center justify-between">
+                        <View className="flex-row items-center space-x-2">
+                          <Text className="text-lg ml-3 max-w-[220px] text-left font-semibold">
+                            {item.topic}
                           </Text>
                         </View>
+                        <View className="flex-row">
+                          <View className="flex-row items-center ">
+                            <Icon
+                              as={Calendar}
+                              size="sm"
+                              className="text-gray-600 mr-1"
+                            />
+                            <Text className="text-lg text-gray-700 mr-3">
+                              {formattedDate}
+                            </Text>
+                          </View>
 
-                        <ActionPopover
-                          onEdit={() => {
-                            handleEditAllergy(item);
-                          }}
-                          onDelete={() => {
-                            setAllergyToDelete(item);
-                            setShowAlertDialog(true);
-                          }}
-                        />
+                          <ActionPopover
+                            onEdit={() => {
+                              handleEditAllergy(item);
+                            }}
+                            onDelete={() => {
+                              setAllergyToDelete(item);
+                              setShowAlertDialog(true);
+                            }}
+                          />
+                        </View>
                       </View>
+                      {item.details ? (
+                        <View className="px-3 mt-1">
+                          <Text className="text-lg text-gray-700">
+                            {item.details}
+                          </Text>
+                        </View>
+                      ) : null}
+                      {item.severity ? (
+                        <View className="px-3">
+                          <Text className="text-base text-gray-700">
+                            Severity:
+                            <Text className="font-semibold">
+                              {item.severity}
+                            </Text>
+                          </Text>
+                        </View>
+                      ) : null}
                     </View>
-                    {item.details ? (
-                      <View className="px-3 mt-1">
-                        <Text className="text-lg text-gray-700">
-                          {item.details}
-                        </Text>
-                      </View>
-                    ) : null}
-                    {item.severity ? (
-                      <View className="px-3">
-                        <Text className="text-base text-gray-700">
-                          Severity:
-                          <Text className="font-semibold">{item.severity}</Text>
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-                );
-              }}
-              ListEmptyComponent={
-                <Text className="text-gray-500">No allergies found.</Text>
-              }
-              style={{ minHeight: 50 }}
-            />
+                  );
+                }}
+                ListEmptyComponent={
+                  <Text className="text-gray-500">No allergies found.</Text>
+                }
+                style={{ minHeight: 50 }}
+              />
+            </View>
           </View>
-        </View>
-
-        {/* hr */}
+      
         <Divider className="bg-gray-300 " />
 
-        
         <View className="py-5">
           <CustomButton
             title="Add Allergy"
@@ -322,7 +333,6 @@ function AddAllergyPage({
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          
           <IconLabelHeading
             icon={require("@/assets/images/allergies.png")}
             label={editingCondition ? "Update Allergy" : "Add Allergy"}

@@ -34,11 +34,12 @@ import { Calendar, Target, Clock } from "lucide-react-native";
 import { CustomFormInput } from "@/components/shared/CustomFormInput";
 import IconLabelHeading from "@/components/shared/IconLabelHeading";
 import CommonConditions from "@/components/shared/CommonConditions";
+import LinkedHealthSystemList from "@/components/shared/LinkedHealthSystemList";
 
-const linkedGoals = [
-  "Establish a consistent sleep schedule for better energy and recovery.",
-  "Improve cardiovascular fitness by engaging in regular aerobic activity.",
-];
+// const linkedGoals = [
+//   "Establish a consistent sleep schedule for better energy and recovery.",
+//   "Improve cardiovascular fitness by engaging in regular aerobic activity.",
+// ];
 
 export default function HighLevelGoals() {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -71,6 +72,16 @@ export default function HighLevelGoals() {
   useEffect(() => {
     fetchGoals();
   }, [patient]);
+
+  const normalizedGoals = userGoals.map((a) => ({
+    ...a,
+    linked_health_system: !!a.linked_health_system,
+  }));
+
+  const linkedGoals = normalizedGoals.filter(
+    (a) => a.linked_health_system === true
+  );
+  const personalGoals = normalizedGoals.filter((a) => !a.linked_health_system);
 
   // Add/Update HighLevelsGoals
   const handleAddUpdateGoal = async (goal: {
@@ -173,25 +184,9 @@ export default function HighLevelGoals() {
           count={linkedGoals.length}
         />
         {/* <Divider className="bg-gray-300 my-3" /> */}
+          <LinkedHealthSystemList data={linkedGoals} titleKey="goal_description" />
 
-        <FlatList
-          data={linkedGoals}
-          renderItem={({ item }) => (
-            <View className="border border-gray-300 p-3 rounded-xl mb-3 bg-gray-100">
-              <Text className="text-lg">{item}</Text>
-            </View>
-          )}
-          keyExtractor={(_, index) => index.toString()}
-          ListEmptyComponent={
-            <Text className="text-gray-500 text-lg">
-              No user linked health system found.
-            </Text>
-          }
-          showsVerticalScrollIndicator={true}
-          scrollEnabled={true}
-          style={{ minHeight: 100, maxHeight: 160 }}
-        />
-        <Divider className="bg-gray-300 mt-2"  />
+        <Divider className="bg-gray-300 mt-2" />
 
         {/* User Entered Goals */}
         <View className="flex-1 mt-4">
@@ -199,13 +194,13 @@ export default function HighLevelGoals() {
             icon={require("@/assets/images/highLevelGoals.png")}
             label="High level goals (User entered)"
             subtitle="Goals you have added"
-            count={userGoals.length}
+            count={personalGoals.length}
           />
           {/* <Divider className="bg-gray-300 my-3" /> */}
 
           <View className="flex-1">
             <FlatList
-              data={userGoals}
+              data={personalGoals}
               keyExtractor={(item) => item.id.toString()}
               showsVerticalScrollIndicator={true}
               scrollEnabled={true}
@@ -396,7 +391,7 @@ function AddYourGoalsPage({
   };
 
   return (
-    <SafeAreaView edges={["right", "top", "left"]}  className="flex-1 bg-white">
+    <SafeAreaView edges={["right", "top", "left"]} className="flex-1 bg-white">
       <Header
         title="Add Health Goal"
         right={
@@ -444,9 +439,7 @@ function AddYourGoalsPage({
               >
                 Duration (Days)
               </Text>
-              
             </View>
-            
 
             <View className="flex-row justify-between my-2">
               {DURATIONS.map((d) => {
@@ -509,7 +502,6 @@ function AddYourGoalsPage({
               onCancel={() => setShowDatePicker(false)}
               minimumDate={new Date()}
             />
-            
           </View>
 
           {/* Common Goals */}
