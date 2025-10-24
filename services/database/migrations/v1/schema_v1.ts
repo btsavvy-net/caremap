@@ -92,7 +92,7 @@ export interface PatientAllergy {
   fhir_id?: string;
   topic: string;
   details?: string;
-  onset_date: Date;
+  onset_date?: Date;
   severity?: SeverityType;
   created_date: Date;
   updated_date: Date;

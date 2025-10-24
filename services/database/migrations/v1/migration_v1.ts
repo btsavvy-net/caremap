@@ -100,7 +100,7 @@ export const up = async (db: SQLiteDatabase) => {
       fhir_id TEXT UNIQUE,
       topic TEXT NOT NULL,
       details TEXT DEFAULT NULL,
-      onset_date TEXT NOT NULL DEFAULT (datetime('now')),
+      onset_date TEXT DEFAULT (datetime('now')),
       severity TEXT CHECK(severity IN ('mild', 'moderate', 'severe')) DEFAULT NULL,
       created_date TEXT NOT NULL DEFAULT (datetime('now')),
       updated_date TEXT NOT NULL DEFAULT (datetime('now')),
