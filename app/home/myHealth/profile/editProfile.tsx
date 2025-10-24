@@ -1,10 +1,7 @@
 import { CustomAlertDialog } from "@/components/shared/CustomAlertDialog";
-import { CustomButton } from "@/components/shared/CustomButton";
-import Header from "@/components/shared/Header";
-import { LabeledTextInput } from "@/components/shared/labeledTextInput";
+import { CustomFormInput } from "@/components/shared/CustomFormInput";
 import { useCustomToast } from "@/components/shared/useCustomToast";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
-import { Divider } from "@/components/ui/divider";
 import { CalendarDaysIcon, Icon } from "@/components/ui/icon";
 import {
   Select,
@@ -13,7 +10,6 @@ import {
   SelectDragIndicator,
   SelectDragIndicatorWrapper,
   SelectIcon,
-  SelectInput,
   SelectItem,
   SelectPortal,
   SelectTrigger,
@@ -43,13 +39,12 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
- 
+
 export default function EditProfilePage() {
   const { user } = useContext(UserContext);
   const { patient, setPatientData } = useContext(PatientContext);
@@ -57,7 +52,7 @@ export default function EditProfilePage() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const [showImageDialog, setShowImageDialog] = useState(false);
- 
+
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const showToast = useCustomToast();
   useEffect(() => {
@@ -72,7 +67,7 @@ export default function EditProfilePage() {
     });
     setLoading(false);
   }, [patient]);
- 
+
   const handleConfirm = (date: Date) => {
     setNewPatient((prev) =>
       prev
@@ -84,13 +79,13 @@ export default function EditProfilePage() {
     );
     setDatePickerVisibility(false);
   };
- 
+
   const handleImagePress = () => {
     setShowImageDialog(true);
   };
   const handlePickImage = async () => {
     const result = await pickImageFromLibrary();
- 
+
     if (result.error) {
       showToast({
         title: "Error",
@@ -99,7 +94,7 @@ export default function EditProfilePage() {
       });
       return;
     }
- 
+
     if (result.base64Image) {
       setNewPatient((prev) =>
         prev ? { ...prev, profile_picture: result.base64Image } : prev
@@ -108,14 +103,14 @@ export default function EditProfilePage() {
   };
   const handleSave = async () => {
     if (!user) return;
- 
+
     let updatedPatient;
- 
+
     try {
       if (!patient?.id) {
         throw new Error("Invalid patient ID.");
       }
- 
+
       updatedPatient = await updatePatient(
         {
           weight: newPatient?.weight,
@@ -127,13 +122,13 @@ export default function EditProfilePage() {
         },
         { id: patient?.id }
       );
- 
+
       if (!updatedPatient) {
         throw new Error("Error updating Patient Profile!");
       }
- 
+
       setPatientData(updatedPatient);
- 
+
       showToast({
         title: "Success",
         description: "Patient data updated.",
@@ -149,7 +144,7 @@ export default function EditProfilePage() {
       });
     }
   };
- 
+
   if (loading || !user || !newPatient) {
     return (
       <SafeAreaView className="flex-1 justify-center items-center bg-white">
@@ -157,18 +152,18 @@ export default function EditProfilePage() {
       </SafeAreaView>
     );
   }
- 
+
   return (
     <SafeAreaView edges={["right", "top", "left"]} className="flex-1 bg-white">
-      <View style={{ backgroundColor: palette.primary }}  className="pt-3 pb-4 px-6">
+      <View
+        style={{ backgroundColor: palette.primary }}
+        className="pt-3 pb-4 px-6"
+      >
         {/* <Header title="Edit Profile" showBackButton /> */}
-        <View
-          
-          className=" flex-row items-center justify-between "
-        >
+        <View className=" flex-row items-center justify-between ">
           {/* Header*/}
           <View style={{ alignItems: "flex-start", width: 50 }}>
-            <TouchableOpacity onPress={() => router.back()} >
+            <TouchableOpacity onPress={() => router.back()}>
               <ChevronLeft color="white" size={24} />
             </TouchableOpacity>
           </View>
@@ -194,8 +189,10 @@ export default function EditProfilePage() {
             </Avatar>
           </TouchableOpacity>
           <View className="ml-4 flex-1">
-            <Text className="text-xl text-white font-semibold"
-            numberOfLines={1}>
+            <Text
+              className="text-xl text-white font-semibold"
+              numberOfLines={1}
+            >
               {getDisplayName(newPatient)}
             </Text>
             <Text className="text-white font-semibold mt-1">
@@ -204,7 +201,7 @@ export default function EditProfilePage() {
                 ? `${calculateAge(patient?.date_of_birth)} years`
                 : "Not set"}
             </Text>
- 
+
             <Text className="text-white font-semibold">
               Weight:{" "}
               {patient?.weight
@@ -229,39 +226,46 @@ export default function EditProfilePage() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={true}
         >
-          <LabeledTextInput
+          
+          <CustomFormInput
+            className="mb-2"
             label="First Name"
             value={newPatient.first_name}
-            editable={!newPatient.first_name}
             onChangeText={(text) =>
               setNewPatient((prev) =>
                 prev ? { ...prev, first_name: text } : prev
               )
             }
+            placeholder="First Name"
           />
-          <LabeledTextInput
+
+         
+          <CustomFormInput
+            className="mb-2"
             label="Middle Name"
             value={newPatient.middle_name ?? ""}
-            editable={!newPatient.middle_name}
             onChangeText={(text) =>
               setNewPatient((prev) =>
                 prev ? { ...prev, middle_name: text } : prev
               )
             }
+            placeholder="Middle Name"
           />
-          <LabeledTextInput
+         
+          <CustomFormInput
+            className="mb-2"
             label="Last Name"
             value={newPatient.last_name}
-            editable={!newPatient.last_name}
             onChangeText={(text) =>
               setNewPatient((prev) =>
                 prev ? { ...prev, last_name: text } : prev
               )
             }
+            placeholder="Last Name"
           />
- 
+
           <View className="mb-3">
-            <Text className="text-black text-sm mb-1">Date of Birth</Text>
+            <Text className=" mb-1">Date of Birth</Text>
             <TouchableOpacity
               className="border flex flex-row justify-between items-center border-gray-300 rounded-lg p-2"
               onPress={() => setDatePickerVisibility(true)}
@@ -288,10 +292,11 @@ export default function EditProfilePage() {
               maximumDate={new Date()}
             />
           </View>
- 
-          <LabeledTextInput
+
+          
+          <CustomFormInput
+            className="mb-2"
             label={`Weight in(${newPatient?.weight_unit})`}
-            keyboardType="numeric"
             value={
               newPatient?.weight !== undefined && !isNaN(newPatient.weight)
                 ? newPatient?.weight?.toString()
@@ -302,10 +307,11 @@ export default function EditProfilePage() {
                 prev ? { ...prev, weight: parseFloat(text) } : prev
               )
             }
+            placeholder="Weight"
           />
- 
+
           <View className="mb-3">
-            <Text className="text-black text-sm mb-1">Relationship</Text>
+            <Text className=" mb-1">Relationship</Text>
             <Select
               selectedValue={newPatient?.relationship}
               onValueChange={(value) =>
@@ -317,11 +323,11 @@ export default function EditProfilePage() {
               <SelectTrigger
                 className="flex flex-row justify-between items-center px-3 rounded-lg"
                 variant="outline"
-                size="lg"
+                size="xl"
               >
                 {/* <SelectInput placeholder="Select relationship" /> */}
                 <Text
-                  className={`text-md ${
+                  className={`text-lg ${
                     newPatient?.relationship ? "text-gray-700" : "text-gray-400"
                   }`}
                 >
@@ -358,10 +364,10 @@ export default function EditProfilePage() {
               </SelectPortal>
             </Select>
           </View>
- 
+
           {/* Gender */}
           <View className="mb-3">
-            <Text className="text-black text-sm mb-1">Gender</Text>
+            <Text className="mb-1">Gender</Text>
             <Select
               selectedValue={newPatient?.gender}
               onValueChange={(value) =>
@@ -373,7 +379,7 @@ export default function EditProfilePage() {
               <SelectTrigger
                 className="flex flex-row justify-between items-center px-3 rounded-lg"
                 variant="outline"
-                size="lg"
+                size="xl"
               >
                 {/* <SelectInput placeholder="Select Gender" /> */}
                 <Text
@@ -429,4 +435,3 @@ export default function EditProfilePage() {
     </SafeAreaView>
   );
 }
- 
