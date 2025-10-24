@@ -43,11 +43,11 @@ function medicalHistory() {
                 onPress={() => router.push(tile.link as Route)}
               >
                 <View className="flex-row items-center">
-                  <Image
+                  {/* <Image
                     source={tile.icon}
                     className="w-8 h-8 mr-4"
                     resizeMode="contain"
-                  />
+                  /> */}
                   <Text className="text-lg">{tile.name}</Text>
                 </View>
 
