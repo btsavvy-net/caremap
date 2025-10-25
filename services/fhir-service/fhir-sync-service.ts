@@ -7,6 +7,7 @@ import { HospitalizationModel } from "@/services/database/models/Hospitalization
 import { PatientAllergyModel } from "@/services/database/models/PatientAllergyModel";
 import { PatientConditionModel } from "@/services/database/models/PatientConditionModel";
 import { PatientMedicationModel } from "@/services/database/models/PatientMedicationModel";
+import { SurgeryProcedureModel } from "@/services/database/models/SurgeryProcedureModel";
 import { logger } from "@/services/logging/logger";
 
 function getSyncAction<T>(fhirData: T | null, exists: boolean) {
@@ -32,11 +33,12 @@ function createFhirLinkedService<T>(model: BaseModel<T>) {
     };
 }
 
-export const PatientAllergyService = createFhirLinkedService(new PatientAllergyModel());
-export const PatientConditionService = createFhirLinkedService(new PatientConditionModel());
-export const PatientMedicationService = createFhirLinkedService(new PatientMedicationModel());
-export const PatientHospitalizationService = createFhirLinkedService(new HospitalizationModel());
-export const PatientDischargeInstructionService = createFhirLinkedService(new DischargeInstructionModel());
+const PatientAllergyService = createFhirLinkedService(new PatientAllergyModel());
+const PatientConditionService = createFhirLinkedService(new PatientConditionModel());
+const PatientMedicationService = createFhirLinkedService(new PatientMedicationModel());
+const PatientHospitalizationService = createFhirLinkedService(new HospitalizationModel());
+const PatientDischargeInstructionService = createFhirLinkedService(new DischargeInstructionModel());
+const PatientSurgeryProcedureService = createFhirLinkedService(new SurgeryProcedureModel());
 
 export async function handleBackgroundFhirSync(patient: DbPatient) {
 
@@ -68,7 +70,7 @@ export async function handleBackgroundFhirSync(patient: DbPatient) {
         { name: "Patient Allergy", fetch: FhirService.getPatientAllergies, service: PatientAllergyService },
         { name: "Patient Medication", fetch: FhirService.getPatientMedications, service: PatientMedicationService },
         { name: "Patient Hospitalization", fetch: FhirService.getPatientHospitalizations, service: PatientHospitalizationService },
-        { name: "Patient Discharge Instructions", fetch: FhirService.getPatientDischargeInstructions, service: PatientDischargeInstructionService }
+        { name: "Patient Surgery Procedure", fetch: FhirService.getPatientSurgeryProcedures, service: PatientSurgeryProcedureService }
         // add more here in same pattern
     ];
 

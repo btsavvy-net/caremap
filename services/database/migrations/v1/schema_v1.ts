@@ -125,9 +125,9 @@ export interface Hospitalization {
   patient_id: number;
   linked_health_system: boolean;
   fhir_id?: string;
-  admission_date?: Date;
-  discharge_date?: Date;
-  details?: string;
+  admission_date: Date;
+  discharge_date: Date;
+  details: string;
   created_date: Date;
   updated_date: Date;
 }
@@ -136,6 +136,7 @@ export interface SurgeryProcedure {
   id: number;
   patient_id: number;
   linked_health_system: boolean;
+  fhir_id?: string;
   procedure_name: string;
   facility?: string;
   complications?: string;

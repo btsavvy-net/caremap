@@ -121,42 +121,6 @@ export async function seedDatabase(db: SQLiteDatabase) {
       );
     }
 
-    for (const proc of sampleSurgeryProcedures) {
-      if (!proc.patient_id || !proc.procedure_name || !proc.procedure_date)
-        continue;
-      await db.execAsync(
-        `INSERT INTO ${tables.SURGERY_PROCEDURE} (
-                    patient_id,
-                    linked_health_system,
-                    procedure_name,
-                    facility,
-                    complications,
-                    surgeon_name,
-                    procedure_date,
-                    details,
-                    created_date,
-                    updated_date
-                ) VALUES (
-                    ${proc.patient_id},
-                    ${proc.linked_health_system ? 1 : 0},
-                    '${escapeSQL(proc.procedure_name)}',
-                    '${escapeSQL(proc.facility || "")}',
-                    '${escapeSQL(proc.complications || "")}',
-                    '${escapeSQL(proc.surgeon_name || "")}',
-                    '${proc.procedure_date.toISOString()}',
-                    '${escapeSQL(proc.details || "")}',
-                    '${proc.created_date
-          ? proc.created_date.toISOString()
-          : new Date().toISOString()
-        }',
-                    '${proc.updated_date
-          ? proc.updated_date.toISOString()
-          : new Date().toISOString()
-        }'
-                )`
-      );
-    }
-
     for (const note of samplePatientNotes) {
       if (!note.patient_id || !note.topic) continue;
       await db.execAsync(

@@ -1,5 +1,5 @@
 import { createApiService, retry } from "@/services/api/ApiService";
-import { Patient as DbPatient, DischargeInstruction, Hospitalization, PatientAllergy, PatientCondition, PatientMedication } from '@/services/database/migrations/v1/schema_v1';
+import { Patient as DbPatient, DischargeInstruction, Hospitalization, PatientAllergy, PatientCondition, PatientMedication, SurgeryProcedure } from '@/services/database/migrations/v1/schema_v1';
 import { Fhir } from "@/services/fhir-service/Fhir";
 import { FHIR_CONFIG } from "@/services/fhir-service/fhir-config";
 import { PatientAllergyMapper } from "@/services/fhir-service/mappers/PatientAllergyMapper";
@@ -8,6 +8,7 @@ import { PatientDischargeMapper } from "@/services/fhir-service/mappers/PatientD
 import { PatientHospitalizationMapper } from "@/services/fhir-service/mappers/PatientHospitalizationMapper";
 import { PatientMapper } from "@/services/fhir-service/mappers/PatientMapper";
 import { PatientMedicationMapper } from "@/services/fhir-service/mappers/PatientMedicationMapper";
+import { PatientProcedureMapper } from "@/services/fhir-service/mappers/PatientProcedureMapper";
 import { logger } from "@/services/logging/logger";
 
 export async function safeFetch<T>(
@@ -156,6 +157,19 @@ export const FhirService = {
         return dischargeInstructionResources;
       },
       (fhirDischargeInstructions) => fhirDischargeInstructions.map((fhirDischargeInstruction) => PatientDischargeMapper.toDb(fhirDischargeInstruction, dbPatientId))
+    );
+  },
+
+  getPatientSurgeryProcedures: async (patientFhirId: string, dbPatientId: number): Promise<Partial<SurgeryProcedure>[] | null> => {
+    return fetchAndMap(
+      async () => {
+        const bundle = await api.get(`/Procedure?patient=${patientFhirId}&_format=json`) as unknown as Promise<Fhir.Bundle<Fhir.Procedure>>;
+        const procedureResources = (await bundle).entry?.map(e => e.resource).filter(
+          (r): r is Fhir.Procedure => r?.resourceType === "Procedure"
+        ) ?? [];
+        return procedureResources;
+      },
+      (fhirSurgeryProcedures) => fhirSurgeryProcedures.map((fhirSurgeryProcedure) => PatientProcedureMapper.toDb(fhirSurgeryProcedure, dbPatientId))
     );
   },
 
