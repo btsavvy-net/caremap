@@ -1,11 +1,13 @@
 import { GoogleConfig } from "@/services/common/types";
 
 
-export const DEBUG_ON = false; // Set to false in production
+export const DEBUG_ON = true; // Set to false in production
 
 export const RESET_ONBOARDING = false;
 
 export const LOG_TRUNCATE_LIMIT = 500;
+
+export const FHIR_SYNC_FREQ: number | null = 3600; // e.g. 3600 for 1 hour or null for manual-only trigger
 
 export const TOKEN_EXPIRY: number | null = null; // (in seconds) OR null to use expires_in from the OAuth call
 

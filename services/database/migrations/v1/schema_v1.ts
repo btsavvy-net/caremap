@@ -1,3 +1,4 @@
+import { SeverityType } from "@/constants/fhirTypes";
 import { NumericSubtype, QuestionType, TrackingFrequency } from "@/constants/trackTypes";
 import { Units } from "@/constants/units";
 
@@ -7,9 +8,19 @@ export interface User {
   name: string;
 }
 
+export interface SyncPatientData {
+  id: string;
+  patient_fhir_id: string;
+  last_synced_at: Date | null;
+  status: boolean;
+  created_date: Date;
+  updated_date: Date;
+}
+
 export interface Patient {
   id: number;
   user_id: string;
+  fhir_id: string;
   blood_type?: string;
   date_of_birth?: Date;
   first_name: string;
@@ -39,6 +50,7 @@ export interface PatientCondition {
   id: number;
   patient_id: number;
   linked_health_system: boolean;
+  fhir_id?: string;
   condition_name: string;
   created_date: Date;
   updated_date: Date;
@@ -58,6 +70,7 @@ export interface PatientGoal {
   id: number;
   patient_id: number;
   linked_health_system: boolean;
+  fhir_id?: string;
   goal_description: string;
   target_date?: Date;
   created_date: Date;
@@ -78,10 +91,11 @@ export interface PatientAllergy {
   id: number;
   patient_id: number;
   linked_health_system: boolean;
+  fhir_id?: string;
   topic: string;
   details?: string;
-  onset_date: Date;
-  severity?: "Mild" | "Moderate" | "Severe";
+  onset_date?: Date;
+  severity?: SeverityType;
   created_date: Date;
   updated_date: Date;
 }
@@ -90,6 +104,7 @@ export interface PatientMedication {
   id: number;
   patient_id: number;
   linked_health_system: boolean;
+  fhir_id?: string;
   name: string;
   details: string;
   created_date: Date;
@@ -110,9 +125,10 @@ export interface Hospitalization {
   id: number;
   patient_id: number;
   linked_health_system: boolean;
+  fhir_id?: string;
   admission_date: Date;
   discharge_date: Date;
-  details?: string;
+  details: string;
   created_date: Date;
   updated_date: Date;
 }
@@ -121,6 +137,7 @@ export interface SurgeryProcedure {
   id: number;
   patient_id: number;
   linked_health_system: boolean;
+  fhir_id?: string;
   procedure_name: string;
   facility?: string;
   complications?: string;
@@ -135,6 +152,7 @@ export interface DischargeInstruction {
   id: number;
   patient_id: number;
   linked_health_system: boolean;
+  fhir_id?: string;
   summary: string;
   discharge_date: Date;
   details?: string;
@@ -238,6 +256,7 @@ export interface Contact {
 
 export const tables = {
   USER: "USER",
+  SYNC_PATIENT_DATA: "SYNC_PATIENT_DATA",
   PATIENT: "PATIENT",
   PATIENT_SNAPSHOT: "PATIENT_SNAPSHOT",
   PATIENT_CONDITION: "PATIENT_CONDITION",

@@ -1,8 +1,8 @@
+import { getCurrentTimestamp } from '@/services/core/utils';
+import { useModel } from '@/services/database/BaseModel';
 import { Patient } from '@/services/database/migrations/v1/schema_v1';
 import { PatientModel } from '@/services/database/models/PatientModel';
 import { logger } from '@/services/logging/logger';
-import { getCurrentTimestamp } from '@/services/core/utils';
-import { useModel } from '@/services/database/BaseModel';
 
 // Single shared instance of model
 const patientModel = new PatientModel();
@@ -44,13 +44,13 @@ export const createPatient = async (patient: Partial<Patient>): Promise<Patient 
         };
 
         const created = await model.insert(newPatient);
-        logger.debug("Patient created: ", created);
-        
+        logger.debugTrunc("Patient created: ", created);
+
         // If we got a raw SQLite result instead of a patient object, fetch the patient
         if (created && !created.id && created.lastInsertRowId) {
             return getPatient(created.lastInsertRowId);
         }
-        
+
         return created;
     });
 }
@@ -58,7 +58,7 @@ export const createPatient = async (patient: Partial<Patient>): Promise<Patient 
 export const getPatient = async (id: number): Promise<Patient | null> => {
     return useModel(patientModel, async (model) => {
         const result = await model.getFirstByFields({ id });
-        logger.debug("DB Patient data: ", result);
+        logger.debugTrunc("DB Patient data: ", result);
         return result;
     });
 }
@@ -66,7 +66,15 @@ export const getPatient = async (id: number): Promise<Patient | null> => {
 export const getPatientByUserId = async (userId: string): Promise<Patient | null> => {
     return useModel(patientModel, async (model) => {
         const result = await model.getFirstByFields({ user_id: userId });
-        logger.debug("DB Patient data by user ID: ", result);
+        logger.debugTrunc("DB Patient data by user ID: ", result);
+        return result;
+    });
+}
+
+export const getPatientByFhirId = async (fhirId: string): Promise<Patient | null> => {
+    return useModel(patientModel, async (model) => {
+        const result = await model.getFirstByFields({ fhir_id: fhirId });
+        logger.debugTrunc("DB Patient data by user ID: ", result);
         return result;
     });
 }
@@ -84,7 +92,7 @@ export const updatePatient = async (patientUpdate: Partial<Patient>, whereMap: P
             updated_date: getCurrentTimestamp()
         };
         const updatedPatient = await model.updateByFields(updateData, whereMap);
-        logger.debug("Updated Patient: ", updatedPatient);
+        logger.debugTrunc("Updated Patient: ", updatedPatient);
         return updatedPatient;
     });
 }
@@ -101,6 +109,20 @@ export const deletePatient = async (id: number): Promise<boolean> => {
         return true;
     });
 }
+
+export const deletePatientByFhirId = async (fhirId: string): Promise<boolean> => {
+    return useModel(patientModel, async (model) => {
+        if (!(await getPatientByFhirId(fhirId))) {
+            logger.debug("Patient not found for deletion: ", fhirId);
+            return false;
+        }
+
+        await model.deleteByFields({ fhir_id: fhirId });
+        logger.debug("Deleted Patient: ", fhirId);
+        return true;
+    });
+}
+
 
 export const getAllPatients = async (): Promise<Patient[]> => {
     return useModel(patientModel, async (model) => {

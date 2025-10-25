@@ -1,5 +1,4 @@
 import { useDB } from '@/services/database/db';
-import { logger } from '@/services/logging/logger';
 import { SQLiteBindParams, SQLiteDatabase } from 'expo-sqlite';
 
 export abstract class BaseModel<T> {
@@ -55,8 +54,6 @@ export abstract class BaseModel<T> {
 
     // Wrapper method to run any SQL query safely inside a transaction using prepared statements
     protected async run(sql: string, params: any[] = []) {
-        logger.debug("SQL: ", sql);
-        logger.debug("Params: ", params);
         let result: any;
         await this.db.withTransactionAsync(async () => {
             const stmt = await this.db.prepareAsync(sql);
@@ -72,7 +69,6 @@ export abstract class BaseModel<T> {
 
     async getAll(): Promise<T[]> {
         const sql = `SELECT * FROM ${this.tableName};`;
-        logger.debug("SQL: ", sql);
         const result = await this.db.getAllAsync<T>(sql);
         return this.convertDates(result, false);
     }
@@ -108,7 +104,6 @@ export abstract class BaseModel<T> {
         const keys = Object.keys(data);
         const values = Object.values(data);
         const placeholders = keys.map(() => '?').join(',');
-        logger.debug(`Data: `, data);
 
         const sql = `INSERT INTO ${this.tableName} (${keys.join(',')}) VALUES (${placeholders})`;
         let result = await this.run(sql, values);

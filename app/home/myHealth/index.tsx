@@ -1,23 +1,30 @@
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Box } from "@/components/ui/box";
-import { Divider } from "@/components/ui/divider";
+import { Grid, GridItem } from "@/components/ui/grid";
 import { EditIcon, Icon, ShareIcon } from "@/components/ui/icon";
 import { PatientContext } from "@/context/PatientContext";
 import { UserContext } from "@/context/UserContext";
 import { initializeAuthSession } from "@/services/auth-service/google-auth";
 import { syncPatientSession } from "@/services/auth-service/session-service";
 import { ShowAlert } from "@/services/common/ShowAlert";
-import { calculateAge } from "@/services/core/utils";
 import { PDFExportService } from "@/services/core/PDFExportService";
+import { calculateAge } from "@/services/core/utils";
+import { startFhirSync } from "@/services/fhir-service/fhir-sync-manager";
 import { logger } from "@/services/logging/logger";
 import { ROUTES } from "@/utils/route";
 import palette from "@/utils/theme/color";
-import { Route, router } from "expo-router";
-import { Camera, User } from "lucide-react-native";
+import { router } from "expo-router";
+import { User } from "lucide-react-native";
 import { useContext, useEffect, useState } from "react";
-import { Image, Text, TouchableOpacity, View, ScrollView, ActivityIndicator } from "react-native";
+import {
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Grid, GridItem } from "@/components/ui/grid";
 
 export default function HealthProfile() {
   const { user, setUserData } = useContext(UserContext);
@@ -47,6 +54,11 @@ export default function HealthProfile() {
 
     sync();
   }, [user]);
+
+  useEffect(() => {
+    if (!patient) return;
+    startFhirSync(patient);
+  }, [patient]);
 
   const handleExportPatientData = async () => {
     if (!patient || isExporting) return;
@@ -111,7 +123,6 @@ export default function HealthProfile() {
       badge: 4,
       link: ROUTES.HIGH_LEVEL_GOALS,
     },
-    
   ];
   if (loading) {
     return (
@@ -130,7 +141,7 @@ export default function HealthProfile() {
   }
 
   return (
-   <SafeAreaView
+    <SafeAreaView
       edges={["right", "top", "left"]}
       className="flex-1 m-0 bg-white"
     >
@@ -151,16 +162,23 @@ export default function HealthProfile() {
             >
               <Icon as={EditIcon} size="lg" className="text-white" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleExportPatientData} disabled={isExporting || !patient}>
-            {isExporting ? (
-              <ActivityIndicator size="small" color="white" style={{ margin: 8 }} />
-            ) : (
-              <Icon as={ShareIcon} size="lg" className="text-white m-2" />
-            )}
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleExportPatientData}
+              disabled={isExporting || !patient}
+            >
+              {isExporting ? (
+                <ActivityIndicator
+                  size="small"
+                  color="white"
+                  style={{ margin: 8 }}
+                />
+              ) : (
+                <Icon as={ShareIcon} size="lg" className="text-white m-2" />
+              )}
+            </TouchableOpacity>
           </View>
         </View>
- 
+
         {/* User row: Avatar + details */}
         <View className="mt-4 flex-row items-center">
           <Avatar className="border border-white/60 bg-white/10 w-20 h-20">
@@ -172,7 +190,7 @@ export default function HealthProfile() {
               </View>
             )}
           </Avatar>
- 
+
           <View className="ml-4 flex-1">
             <Text
               className="text-white text-xl font-semibold"
@@ -182,7 +200,7 @@ export default function HealthProfile() {
                 patient?.last_name ?? ""
               }`.trim() || "Your name"}
             </Text>
- 
+
             <Text className="text-white font-semibold mt-1">
               Age:{" "}
               {calculateAge(patient?.date_of_birth)
