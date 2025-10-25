@@ -70,6 +70,7 @@ export interface PatientGoal {
   id: number;
   patient_id: number;
   linked_health_system: boolean;
+  fhir_id?: string;
   goal_description: string;
   target_date?: Date;
   created_date: Date;

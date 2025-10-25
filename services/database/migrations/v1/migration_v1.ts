@@ -76,6 +76,7 @@ export const up = async (db: SQLiteDatabase) => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       patient_id INTEGER NOT NULL,
       linked_health_system INTEGER NOT NULL DEFAULT 0,
+      fhir_id TEXT UNIQUE,
       goal_description TEXT NOT NULL,
       target_date TEXT DEFAULT NULL,
       created_date TEXT NOT NULL DEFAULT (datetime('now')),

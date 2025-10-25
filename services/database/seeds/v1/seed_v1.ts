@@ -1,13 +1,10 @@
 import { tables } from "@/services/database/migrations/v1/schema_v1";
 import {
   sampleContacts,
-  sampleDischargeInstructions,
   samplePatientEmergencyCare,
   samplePatientEquipment,
-  samplePatientGoals,
   samplePatientNotes,
-  samplePatientSnapshots,
-  sampleSurgeryProcedures
+  samplePatientSnapshots
 } from "@/services/database/seeds/v1/sample_data";
 import { logger } from "@/services/logging/logger";
 import { SQLiteDatabase } from "expo-sqlite";
@@ -61,34 +58,6 @@ export async function seedDatabase(db: SQLiteDatabase) {
         new Date().toISOString()
         }',
                     '${equipment.updated_date?.toISOString() ||
-        new Date().toISOString()
-        }'
-                )`
-      );
-    }
-
-    // Insert patient goals
-    for (const goal of samplePatientGoals) {
-      if (!goal.patient_id || !goal.goal_description) continue;
-      await db.execAsync(
-        `INSERT INTO ${tables.PATIENT_GOAL} (
-                    patient_id,
-                    goal_description,
-                    target_date,
-                    linked_health_system,
-                    created_date,
-                    updated_date
-                ) VALUES (
-                    ${goal.patient_id},
-                    '${escapeSQL(goal.goal_description)}',
-                    '${goal.target_date?.toISOString() ||
-        new Date().toISOString()
-        }',
-                    ${goal.linked_health_system ? 1 : 0},
-                    '${goal.created_date?.toISOString() ||
-        new Date().toISOString()
-        }',
-                    '${goal.updated_date?.toISOString() ||
         new Date().toISOString()
         }'
                 )`

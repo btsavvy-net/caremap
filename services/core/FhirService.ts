@@ -1,10 +1,11 @@
 import { createApiService, retry } from "@/services/api/ApiService";
-import { Patient as DbPatient, DischargeInstruction, Hospitalization, PatientAllergy, PatientCondition, PatientMedication, SurgeryProcedure } from '@/services/database/migrations/v1/schema_v1';
+import { Patient as DbPatient, DischargeInstruction, Hospitalization, PatientAllergy, PatientCondition, PatientGoal, PatientMedication, SurgeryProcedure } from '@/services/database/migrations/v1/schema_v1';
 import { Fhir } from "@/services/fhir-service/Fhir";
 import { FHIR_CONFIG } from "@/services/fhir-service/fhir-config";
 import { PatientAllergyMapper } from "@/services/fhir-service/mappers/PatientAllergyMapper";
 import { PatientConditionMapper } from "@/services/fhir-service/mappers/PatientConditionMapper";
 import { PatientDischargeMapper } from "@/services/fhir-service/mappers/PatientDischargeMapper";
+import { PatientGoalMapper } from "@/services/fhir-service/mappers/PatientGoalMapper";
 import { PatientHospitalizationMapper } from "@/services/fhir-service/mappers/PatientHospitalizationMapper";
 import { PatientMapper } from "@/services/fhir-service/mappers/PatientMapper";
 import { PatientMedicationMapper } from "@/services/fhir-service/mappers/PatientMedicationMapper";
@@ -170,6 +171,19 @@ export const FhirService = {
         return procedureResources;
       },
       (fhirSurgeryProcedures) => fhirSurgeryProcedures.map((fhirSurgeryProcedure) => PatientProcedureMapper.toDb(fhirSurgeryProcedure, dbPatientId))
+    );
+  },
+
+  getPatientHighLevelGoals: async (patientFhirId: string, dbPatientId: number): Promise<Partial<PatientGoal>[] | null> => {
+    return fetchAndMap(
+      async () => {
+        const bundle = await api.get(`/Goal?patient=${patientFhirId}&_format=json`) as unknown as Promise<Fhir.Bundle<Fhir.Goal>>;
+        const highLevelGoalResources = (await bundle).entry?.map(e => e.resource).filter(
+          (r): r is Fhir.Goal => r?.resourceType === "Goal"
+        ) ?? [];
+        return highLevelGoalResources;
+      },
+      (fhirHighLevelGoals) => fhirHighLevelGoals.map((fhirHighLevelGoal) => PatientGoalMapper.toDb(fhirHighLevelGoal, dbPatientId))
     );
   },
 

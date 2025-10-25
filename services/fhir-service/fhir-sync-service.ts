@@ -6,6 +6,7 @@ import { DischargeInstructionModel } from "@/services/database/models/DischargeI
 import { HospitalizationModel } from "@/services/database/models/HospitalizationModel";
 import { PatientAllergyModel } from "@/services/database/models/PatientAllergyModel";
 import { PatientConditionModel } from "@/services/database/models/PatientConditionModel";
+import { PatientGoalModel } from "@/services/database/models/PatientGoalModel";
 import { PatientMedicationModel } from "@/services/database/models/PatientMedicationModel";
 import { SurgeryProcedureModel } from "@/services/database/models/SurgeryProcedureModel";
 import { logger } from "@/services/logging/logger";
@@ -39,6 +40,7 @@ const PatientMedicationService = createFhirLinkedService(new PatientMedicationMo
 const PatientHospitalizationService = createFhirLinkedService(new HospitalizationModel());
 const PatientDischargeInstructionService = createFhirLinkedService(new DischargeInstructionModel());
 const PatientSurgeryProcedureService = createFhirLinkedService(new SurgeryProcedureModel());
+const PatientHighLevelGoalService = createFhirLinkedService(new PatientGoalModel());
 
 export async function handleBackgroundFhirSync(patient: DbPatient) {
 
@@ -70,7 +72,9 @@ export async function handleBackgroundFhirSync(patient: DbPatient) {
         { name: "Patient Allergy", fetch: FhirService.getPatientAllergies, service: PatientAllergyService },
         { name: "Patient Medication", fetch: FhirService.getPatientMedications, service: PatientMedicationService },
         { name: "Patient Hospitalization", fetch: FhirService.getPatientHospitalizations, service: PatientHospitalizationService },
-        { name: "Patient Surgery Procedure", fetch: FhirService.getPatientSurgeryProcedures, service: PatientSurgeryProcedureService }
+        { name: "Patient Surgery Procedure", fetch: FhirService.getPatientSurgeryProcedures, service: PatientSurgeryProcedureService },
+        { name: "Patient Discharge Instruction", fetch: FhirService.getPatientDischargeInstructions, service: PatientDischargeInstructionService },
+        { name: "Patient High Level Goal", fetch: FhirService.getPatientHighLevelGoals, service: PatientHighLevelGoalService },
         // add more here in same pattern
     ];
 
