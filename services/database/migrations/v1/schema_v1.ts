@@ -124,8 +124,9 @@ export interface Hospitalization {
   id: number;
   patient_id: number;
   linked_health_system: boolean;
-  admission_date: Date;
-  discharge_date: Date;
+  fhir_id?: string;
+  admission_date?: Date;
+  discharge_date?: Date;
   details?: string;
   created_date: Date;
   updated_date: Date;

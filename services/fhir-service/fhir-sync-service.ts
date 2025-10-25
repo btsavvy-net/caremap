@@ -2,6 +2,7 @@ import { FhirService } from "@/services/core/FhirService";
 import { deletePatientByFhirId, getPatientByFhirId, updatePatient } from "@/services/core/PatientService";
 import { BaseModel, useModel } from "@/services/database/BaseModel";
 import { Patient as DbPatient } from "@/services/database/migrations/v1/schema_v1";
+import { HospitalizationModel } from "@/services/database/models/HospitalizationModel";
 import { PatientAllergyModel } from "@/services/database/models/PatientAllergyModel";
 import { PatientConditionModel } from "@/services/database/models/PatientConditionModel";
 import { PatientMedicationModel } from "@/services/database/models/PatientMedicationModel";
@@ -33,6 +34,7 @@ function createFhirLinkedService<T>(model: BaseModel<T>) {
 export const PatientAllergyService = createFhirLinkedService(new PatientAllergyModel());
 export const PatientConditionService = createFhirLinkedService(new PatientConditionModel());
 export const PatientMedicationService = createFhirLinkedService(new PatientMedicationModel());
+export const PatientHospitalizationService = createFhirLinkedService(new HospitalizationModel());
 
 export async function handleBackgroundFhirSync(patient: DbPatient) {
 
@@ -62,7 +64,8 @@ export async function handleBackgroundFhirSync(patient: DbPatient) {
     const resourcesToSync = [
         { name: "Medical Condition", fetch: FhirService.getPatientConditions, service: PatientConditionService },
         { name: "Patient Allergy", fetch: FhirService.getPatientAllergies, service: PatientAllergyService },
-        { name: "Patient Medication", fetch: FhirService.getPatientMedications, service: PatientMedicationService }
+        { name: "Patient Medication", fetch: FhirService.getPatientMedications, service: PatientMedicationService },
+        { name: "Patient Hospitalization", fetch: FhirService.getPatientHospitalizations, service: PatientHospitalizationService }
         // add more here in same pattern
     ];
 
