@@ -1,29 +1,38 @@
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Box } from "@/components/ui/box";
-import { Divider } from "@/components/ui/divider";
+import { Grid, GridItem } from "@/components/ui/grid";
 import { EditIcon, Icon, ShareIcon } from "@/components/ui/icon";
 import { PatientContext } from "@/context/PatientContext";
 import { UserContext } from "@/context/UserContext";
 import { initializeAuthSession } from "@/services/auth-service/google-auth";
 import { syncPatientSession } from "@/services/auth-service/session-service";
 import { ShowAlert } from "@/services/common/ShowAlert";
+import { PDFExportService } from "@/services/core/PDFExportService";
 import { calculateAge } from "@/services/core/utils";
 import { startFhirSync } from "@/services/fhir-service/fhir-sync-manager";
 import { logger } from "@/services/logging/logger";
 import { ROUTES } from "@/utils/route";
 import palette from "@/utils/theme/color";
-import { Route, router } from "expo-router";
+import { router } from "expo-router";
 import { User } from "lucide-react-native";
 import { useContext, useEffect, useState } from "react";
-import { Image, Text, TouchableOpacity, View, ScrollView } from "react-native";
+import {
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Grid, GridItem } from "@/components/ui/grid";
 
 export default function HealthProfile() {
   const { user, setUserData } = useContext(UserContext);
   const { patient, setPatientData } = useContext(PatientContext);
   const [loading, setLoading] = useState(true);
-const COLUMNS = 2 as const;
+  const [isExporting, setIsExporting] = useState(false);
+
+  const COLUMNS = 2 as const;
   const gridColsClass = "grid-cols-2";
   useEffect(() => {
     initializeAuthSession(setUserData).finally(() => setLoading(false));
@@ -50,6 +59,20 @@ const COLUMNS = 2 as const;
     if (!patient) return;
     startFhirSync(patient);
   }, [patient]);
+
+  const handleExportPatientData = async () => {
+    if (!patient || isExporting) return;
+
+    setIsExporting(true);
+    try {
+      await PDFExportService.exportPatientDataToPDF(patient.id);
+    } catch (error) {
+      console.error("Error exporting patient data:", error);
+      ShowAlert("e", "Failed to export health report. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const medicalTiles = [
     {
@@ -100,7 +123,6 @@ const COLUMNS = 2 as const;
       badge: 4,
       link: ROUTES.HIGH_LEVEL_GOALS,
     },
-    
   ];
   if (loading) {
     return (
@@ -119,7 +141,7 @@ const COLUMNS = 2 as const;
   }
 
   return (
-   <SafeAreaView
+    <SafeAreaView
       edges={["right", "top", "left"]}
       className="flex-1 m-0 bg-white"
     >
@@ -141,15 +163,22 @@ const COLUMNS = 2 as const;
               <Icon as={EditIcon} size="lg" className="text-white" />
             </TouchableOpacity>
             <TouchableOpacity
-              className="p-2 mr-1"
-              onPress={() => router.push(ROUTES.EDIT_PROFILE)}
-              accessibilityLabel="Share My Health"
+              onPress={handleExportPatientData}
+              disabled={isExporting || !patient}
             >
-              <Icon as={ShareIcon} size="lg" className="text-white" />
+              {isExporting ? (
+                <ActivityIndicator
+                  size="small"
+                  color="white"
+                  style={{ margin: 8 }}
+                />
+              ) : (
+                <Icon as={ShareIcon} size="lg" className="text-white m-2" />
+              )}
             </TouchableOpacity>
           </View>
         </View>
- 
+
         {/* User row: Avatar + details */}
         <View className="mt-4 flex-row items-center">
           <Avatar className="border border-white/60 bg-white/10 w-20 h-20">
@@ -161,7 +190,7 @@ const COLUMNS = 2 as const;
               </View>
             )}
           </Avatar>
- 
+
           <View className="ml-4 flex-1">
             <Text
               className="text-white text-xl font-semibold"
@@ -171,7 +200,7 @@ const COLUMNS = 2 as const;
                 patient?.last_name ?? ""
               }`.trim() || "Your name"}
             </Text>
- 
+
             <Text className="text-white font-semibold mt-1">
               Age:{" "}
               {calculateAge(patient?.date_of_birth)
