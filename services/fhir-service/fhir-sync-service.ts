@@ -2,6 +2,7 @@ import { FhirService } from "@/services/core/FhirService";
 import { deletePatientByFhirId, getPatientByFhirId, updatePatient } from "@/services/core/PatientService";
 import { BaseModel, useModel } from "@/services/database/BaseModel";
 import { Patient as DbPatient } from "@/services/database/migrations/v1/schema_v1";
+import { DischargeInstructionModel } from "@/services/database/models/DischargeInstructionModel";
 import { HospitalizationModel } from "@/services/database/models/HospitalizationModel";
 import { PatientAllergyModel } from "@/services/database/models/PatientAllergyModel";
 import { PatientConditionModel } from "@/services/database/models/PatientConditionModel";
@@ -35,6 +36,7 @@ export const PatientAllergyService = createFhirLinkedService(new PatientAllergyM
 export const PatientConditionService = createFhirLinkedService(new PatientConditionModel());
 export const PatientMedicationService = createFhirLinkedService(new PatientMedicationModel());
 export const PatientHospitalizationService = createFhirLinkedService(new HospitalizationModel());
+export const PatientDischargeInstructionService = createFhirLinkedService(new DischargeInstructionModel());
 
 export async function handleBackgroundFhirSync(patient: DbPatient) {
 
@@ -65,7 +67,8 @@ export async function handleBackgroundFhirSync(patient: DbPatient) {
         { name: "Medical Condition", fetch: FhirService.getPatientConditions, service: PatientConditionService },
         { name: "Patient Allergy", fetch: FhirService.getPatientAllergies, service: PatientAllergyService },
         { name: "Patient Medication", fetch: FhirService.getPatientMedications, service: PatientMedicationService },
-        { name: "Patient Hospitalization", fetch: FhirService.getPatientHospitalizations, service: PatientHospitalizationService }
+        { name: "Patient Hospitalization", fetch: FhirService.getPatientHospitalizations, service: PatientHospitalizationService },
+        { name: "Patient Discharge Instructions", fetch: FhirService.getPatientDischargeInstructions, service: PatientDischargeInstructionService }
         // add more here in same pattern
     ];
 

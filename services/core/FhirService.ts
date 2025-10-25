@@ -1,9 +1,10 @@
 import { createApiService, retry } from "@/services/api/ApiService";
-import { Patient as DbPatient, Hospitalization, PatientAllergy, PatientCondition, PatientMedication } from '@/services/database/migrations/v1/schema_v1';
+import { Patient as DbPatient, DischargeInstruction, Hospitalization, PatientAllergy, PatientCondition, PatientMedication } from '@/services/database/migrations/v1/schema_v1';
 import { Fhir } from "@/services/fhir-service/Fhir";
 import { FHIR_CONFIG } from "@/services/fhir-service/fhir-config";
 import { PatientAllergyMapper } from "@/services/fhir-service/mappers/PatientAllergyMapper";
 import { PatientConditionMapper } from "@/services/fhir-service/mappers/PatientConditionMapper";
+import { PatientDischargeMapper } from "@/services/fhir-service/mappers/PatientDischargeMapper";
 import { PatientHospitalizationMapper } from "@/services/fhir-service/mappers/PatientHospitalizationMapper";
 import { PatientMapper } from "@/services/fhir-service/mappers/PatientMapper";
 import { PatientMedicationMapper } from "@/services/fhir-service/mappers/PatientMedicationMapper";
@@ -142,6 +143,19 @@ export const FhirService = {
         return hospitalizationResources;
       },
       (fhirHospitalizations) => fhirHospitalizations.map((fhirHospitalization) => PatientHospitalizationMapper.toDb(fhirHospitalization, dbPatientId))
+    );
+  },
+
+  getPatientDischargeInstructions: async (patientFhirId: string, dbPatientId: number): Promise<Partial<DischargeInstruction>[] | null> => {
+    return fetchAndMap(
+      async () => {
+        const bundle = await api.get(`/ClinicalImpression?patient=${patientFhirId}&_format=json`) as unknown as Promise<Fhir.Bundle<Fhir.ClinicalImpression>>;
+        const dischargeInstructionResources = (await bundle).entry?.map(e => e.resource).filter(
+          (r): r is Fhir.ClinicalImpression => r?.resourceType === "ClinicalImpression"
+        ) ?? [];
+        return dischargeInstructionResources;
+      },
+      (fhirDischargeInstructions) => fhirDischargeInstructions.map((fhirDischargeInstruction) => PatientDischargeMapper.toDb(fhirDischargeInstruction, dbPatientId))
     );
   },
 

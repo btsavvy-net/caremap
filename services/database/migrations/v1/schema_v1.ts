@@ -150,6 +150,7 @@ export interface DischargeInstruction {
   id: number;
   patient_id: number;
   linked_health_system: boolean;
+  fhir_id?: string;
   summary: string;
   discharge_date: Date;
   details?: string;
